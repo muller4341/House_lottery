@@ -1,20 +1,32 @@
-import { useState } from 'react'
-import './App.css'
+import  { BrowserRouter as Router,Route, Routes} from 'react-router-dom'
+import Signin from './pages/Signin'
+import Dashboard from './pages/Dashboard'
 
 function App() {
-  const [count, setCount] = useState(0)
+  
 
   return (
-    <div className='background bg-green-100 rounded-full p-10'>
-
-      <h1 className="text-3xl font-bold underline text-fuchsia-900 ">
-        Hello friends!
-      </h1>
-      <h1 className="text-3xl font-bold underline text-green-900">
-        This is the bloom app
-      </h1>
-    </div>
     
+<Router>
+ 
+  {/* <Navbar/> */}
+<Routes>
+<Route path="/"element={<Signin/>} />
+<Route path="/signin" element={<Signin/>}/>
+<Route path="/dashboard" element={<Dashboard/>}/>
+    
+  </Routes> 
+  
+ 
+  
+
+
+
+
+
+
+
+    </Router>      
   )
 }
 

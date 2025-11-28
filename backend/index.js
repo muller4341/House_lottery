@@ -5,12 +5,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import authRoute from './routes/auth.route.js'
 
-// Routes
-import userRouter from './routes/userRouter.js';
-import auth from './routes/auth.js';
-import propertyRouter from './routes/property.js';
-// ... your other routes
 
 const app = express();
 // DEBUG — SEE EXACTLY WHAT'S HITTING YOUR SERVER
@@ -39,10 +35,7 @@ mongoose.connect(process.env.MONGO_URL)
   .catch((err) => console.log('DB Error:', err));
 
 // Routes
-app.use('/api/user', userRouter);
-app.use('/api/auth', auth);
-app.use('/api/property', propertyRouter);
-// ... your other routes
+app.use('/api/auth', authRoute)
 
 // Error handler
 app.use((error, req, res, next) => {
