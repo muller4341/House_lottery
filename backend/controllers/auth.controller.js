@@ -133,7 +133,7 @@ export const signin = async (req, res, next) => {
     } else {
       console.log('⚠️  NO LDAP DATA - Using basic profile');
       ldapUser = {
-        employeeId: `CBE-${username}`,
+        employeeId: `CBE-${employeeID || username}`,
         samAccountName: username,
         displayName: username,
         fullName: username,

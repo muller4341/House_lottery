@@ -29,11 +29,6 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie parser — needed for JWT cookie
 app.use(cookieParser());
 
-// Database connection
-mongoose.connect(process.env.MONGO_URL)
-  .then(() => console.log('Database connected successfully'))
-  .catch((err) => console.log('DB Error:', err));
-
 // Routes
 app.use('/api/auth', authRoute)
 
@@ -45,18 +40,8 @@ app.use((error, req, res, next) => {
   res.status(statusCode).json({ success: false, message });
 });
 
-// Serve static files (only if you have web build)
-// app.use(express.static(path.join(__dirname, '/client/dist')));
-// app.get('*', (req, res) => {
-//   if (!req.path.startsWith('/api')) {
-//     res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
-//   }
-// });
-
-// Start server on ALL interfaces (so phone can reach it)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`SERVER RUNNING ON http://10.14.212.253:${PORT}`);
-  console.log(`For phone: http://10.14.212.253:${PORT}`);
-  console.log(`For emulator: http://10.0.2.2:${PORT}`);
+ 
 });
