@@ -21,12 +21,8 @@ const Signin = () => {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
-  
-  console.log('🚨 REAL LDAP TEST:', formData.username, formData.password.length + ' chars');
-  
-  // BLOCK EMPTY FIELDS
   if (!formData.username || !formData.password) {
-    setError('👤 Username and 🔒 Password REQUIRED!');
+    setError('Username and password are required!');
     return;
   }
 
@@ -35,59 +31,27 @@ const Signin = () => {
   setSuccess(false);
 
   try {
-    console.log('🔍 SENDING TO REAL API: /api/auth/signin');
-    
-    // 🔥 REAL API CALL - NO FAKE STUFF!
-    const response = await fetch('http://10.14.212.253:5000/api/auth/signin', {
+    const response = await fetch('/api/auth/signin', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // JWT COOKIES
-      body: JSON.stringify({
-        username: formData.username,
-        password: formData.password
-      })
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(formData),
     });
 
-    console.log('📡 API STATUS:', response.status);
-    
     const data = await response.json();
-    console.log('📄 API DATA:', data);
 
-    // 🔥 ONLY SUCCESS IF BACKEND SAYS SUCCESS
-    if (response.ok && data.success) {
-      console.log('✅ LDAP BIND WORKED!');
+    if (response.ok && data.success && data.user) {
       localStorage.setItem('cbeUser', JSON.stringify(data.user));
       setSuccess(true);
-      
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1500);
     } else {
-      // 🔥 BLOCK WRONG PASSWORD
-
-      console.log('❌ LDAP BIND FAILED!');
-      setError(
-        `🔒 **INVALID CREDENTIALS** 🔒\n\n` +
-        `❌ **${formData.username}** - Wrong password!\n\n` +
-        `✅ **CORRECT:** mulukenwalle + 1234qweAsd#@`
-      );
+      throw new Error(data.message || 'Invalid credentials');
     }
-
-  } catch (error) {
-
-           setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1500);
-    console.error('💥 NETWORK/ERROR:', error);
-    setError(
-      `🌐 **CONNECTION FAILED**\n\n` +
-      `❌ Check:\n` +
-      `   • Backend running?\n` +
-      `   • API route exists?\n` +
-      `   • Network connection?`
-    );
+  } catch (err) {
+    setSuccess(false);
+    setError(`ACCESS DENIED\n\n${err.message}\n\nContact IT Support if needed.`);
   } finally {
     setLoading(false);
   }

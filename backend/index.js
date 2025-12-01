@@ -11,6 +11,7 @@ import usersRoute from './routes/users.route.js';
 import assignmentsRoute from './routes/assignments.route.js';
 import { seedUsers } from './utils/seed.js';
 import { prisma } from './utils/prismaClient.js';
+import auth from './routes/auth.route.js';
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/users', usersRoute);
 app.use('/api/assignments', assignmentsRoute);
+app.use('/api/auth', auth);
 
 // Seed route (for development - remove in production)
 app.post('/api/seed', async (req, res) => {
@@ -49,10 +51,16 @@ app.post('/api/seed', async (req, res) => {
   }
 });
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Check DB connection immediately on server start
+(async () => {
+  try {
+    const result = await prisma.$queryRaw`SELECT NOW() as now`;
+    console.log("✅ Database connected! Current time:", result[0]?.now);
+  } catch (error) {
+    console.error("❌ Database connection failed on startup:", error.message);
+  }
+})();
+
 
 // Error handler
 app.use((error, req, res, next) => {
@@ -62,7 +70,11 @@ app.use((error, req, res, next) => {
   res.status(statusCode).json({ success: false, message });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`SERVER RUNNING ON http://10.14.212.253:${PORT}`);
+// CORRECT — bind to ALL interfaces (localhost + LAN)
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`SERVER IS NOW RUNNING`);
+  console.log(`Local:    http://localhost:${PORT}`);
+  console.log(`Network:  http://10.14.212.253:${PORT}`);
 });

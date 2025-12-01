@@ -1,11 +1,9 @@
 import express from 'express';
 
-import { signout, signin  } from '../controllers/auth.controller.js';
+import {signin  } from '../controllers/auth.controller.js';
 import verifyUser from '../utils/verifyUser.js'
 
 const router = express.Router();
-
-router.post('/signout',signout )
 router.post('/signin',signin )
 router.get("/verify", verifyUser, (req, res) => {
   res.status(200).json({

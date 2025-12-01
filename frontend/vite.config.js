@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000', // Matches backend port
+        target: 'http://localhost:3000', // Matches backend port
         secure: false,
         changeOrigin: true,
         configure: (proxy, options) => {
@@ -33,3 +33,23 @@ export default defineConfig({
     tailwindcss(),
   ],
 });
+
+// import { defineConfig } from 'vite';
+// import react from '@vitejs/plugin-react';
+// import tailwindcss from '@tailwindcss/vite';
+
+// export default defineConfig({
+//  server: {
+//     host: true,           // ← IMPORTANT: allows external access
+//     port: 5173,
+//     proxy: {
+//       '/api': {
+//         target: 'http://localhost:3000',
+//         changeOrigin: true,
+//         secure: false,
+//         rewrite: (path) => path.replace(/^\/api/, '/api')  // ← ensures /api stays /api
+//       }
+//     }
+//   },
+//   plugins: [react(), tailwindcss()],
+// });

@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import AssignmentPage from './pages/AssignmentPage'
 import AddUserPage from './pages/AddUserPage'
 import AssignmentViewPage from './pages/AssignentViewPage'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   
@@ -16,7 +17,7 @@ function App() {
 <Routes>
 <Route path="/"element={<Signin/>} />
 <Route path="/signin" element={<Signin/>}/>
-<Route path="/dashboard" element={<Dashboard/>}/>
+<Route path="/dashboard" element={<ProtectedRoute><Dashboard/></ProtectedRoute>}/>
 <Route path='/daily-assignment' element={<AssignmentPage/>}/>
 <Route path='/add-user' element={<AddUserPage/>}/>
 <Route path='/assignment-view' element={<AssignmentViewPage/>}/>
