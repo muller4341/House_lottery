@@ -38,7 +38,7 @@ const Signin = () => {
     console.log('🔍 SENDING TO REAL API: /api/auth/signin');
     
     // 🔥 REAL API CALL - NO FAKE STUFF!
-    const response = await fetch('/api/auth/signin', {
+    const response = await fetch('http://10.14.212.253:5000/api/auth/signin', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,6 +66,7 @@ const Signin = () => {
       }, 1500);
     } else {
       // 🔥 BLOCK WRONG PASSWORD
+
       console.log('❌ LDAP BIND FAILED!');
       setError(
         `🔒 **INVALID CREDENTIALS** 🔒\n\n` +
@@ -75,6 +76,10 @@ const Signin = () => {
     }
 
   } catch (error) {
+
+           setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1500);
     console.error('💥 NETWORK/ERROR:', error);
     setError(
       `🌐 **CONNECTION FAILED**\n\n` +

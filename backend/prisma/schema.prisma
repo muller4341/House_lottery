@@ -1,0 +1,73 @@
+// prisma/schema.prisma
+// Updated: TL1/TL2 IDs optional (at least one required in controller).
+// Added phone overrides. Account Officer non-relational (4-digit employeeId).
+// Times required for officers (enforce in controller).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  employeeId    String   @unique
+  name          String
+  role          Role
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations (one-to-many from User to Assignment)
+  // Account Officer: No relation (manual 4-digit ID)
+  assignedAsOfficer1 Assignment[] @relation("Officer1Assignments")
+  assignedAsOfficer2 Assignment[] @relation("Officer2Assignments")
+  assignedAsTL1      Assignment[] @relation("TL1Assignments")
+  assignedAsTL2      Assignment[] @relation("TL2Assignments")
+
+  @@map("users")
+}
+
+model Assignment {
+  id                      String   @id @default(uuid())
+  date                    DateTime @db.Date  // Date-only storage
+  branchName              String
+  accountOfficerEmployeeId String  // 4-digit manual ID (non-relational)
+
+  // Officers: Required
+  officer1Id              String   // Non-optional
+  officer1StartTime       String   // Required for officers
+  officer1EndTime         String   // Required for officers
+  officer1Phone           String?  // Optional override from User.phone
+
+  officer2Id              String   // Non-optional
+  officer2StartTime       String   // Required for officers
+  officer2EndTime         String   // Required for officers
+  officer2Phone           String?  // Optional override
+
+  // Team Leaders: Optional (but at least one enforced in controller)
+  tl1Id                   String?
+  tl1Phone                String?  // Optional override
+
+  tl2Id                   String?
+  tl2Phone                String?  // Optional override
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations (officers required, TLs optional)
+  officer1 User @relation("Officer1Assignments", fields: [officer1Id], references: [id])
+  officer2 User @relation("Officer2Assignments", fields: [officer2Id], references: [id])
+  tl1     User? @relation("TL1Assignments", fields: [tl1Id], references: [id])
+  tl2     User? @relation("TL2Assignments", fields: [tl2Id], references: [id])
+
+  @@map("assignments")
+}
+
+enum Role {
+  OFFICER
+  TEAM_LEADER
+  CENTRAL_KYC_MANAGER
+}

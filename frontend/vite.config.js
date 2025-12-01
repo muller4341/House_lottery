@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3000', // Matches backend port
+        target: 'http://localhost:5000', // Matches backend port
         secure: false,
         changeOrigin: true,
         configure: (proxy, options) => {

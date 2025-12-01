@@ -1,4 +1,6 @@
+// Dashboard.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ChartBarIcon, 
   UserGroupIcon, 
@@ -7,10 +9,14 @@ import {
   ArrowTrendingUpIcon,
   CreditCardIcon,
   ClockIcon,
-  EyeIcon
+  EyeIcon,
+  UserPlusIcon,
+  CalendarIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -54,6 +60,18 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleAddUserClick = () => {
+    navigate('/add-user');
+  };
+
+  const handleDailyAssignmentClick = () => {
+    navigate('/daily-assignment');
+  };
+
+  const handleAssignmentViewClick = () => {
+    navigate('/assignment-view');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-pink-50/90 flex items-center justify-center">
@@ -66,7 +84,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-pink-50/90">
+    <div className="min-h-screen bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-pink-50/90 flex flex-col">
       {/* Animated Background Particles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-fuchsia-800/15 to-pink-600/15 rounded-full blur-3xl animate-blob"></div>
@@ -74,7 +92,7 @@ const Dashboard = () => {
         <div className="absolute top-40 left-40 w-72 h-72 bg-gradient-to-br from-pink-800/10 to-fuchsia-800/10 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         {/* Header */}
         <header className="bg-white/95 backdrop-blur-2xl border-b border-fuchsia-800/20 shadow-sm sticky top-0 z-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -110,7 +128,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 lg:py-12">
+        <main className="flex-1 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 lg:py-12 w-full">
           {/* Welcome Card */}
           <div className="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-fuchsia-800/20 p-6 lg:p-8 xl:p-10 mb-8 lg:mb-12">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between">
@@ -164,7 +182,7 @@ const Dashboard = () => {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 w-full">
             {/* Quick Actions */}
             <div className="lg:col-span-2">
               <div className="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-fuchsia-800/20 p-6 lg:p-8 xl:p-10">
@@ -186,17 +204,39 @@ const Dashboard = () => {
                     { icon: DocumentCheckIcon, title: 'Reject KYC', count: stats.rejected, color: 'from-rose-500' },
                     { icon: CreditCardIcon, title: 'View Reports', count: stats.totalKyc, color: 'from-blue-500' },
                     { icon: UserGroupIcon, title: 'Customer List', count: '12,456', color: 'from-fuchsia-500' },
-                    { icon: ChartBarIcon, title: 'Analytics', count: 'Today', color: 'from-indigo-500' }
+                    { icon: ChartBarIcon, title: 'Analytics', count: 'Today', color: 'from-indigo-500' },
+                    { 
+                      icon: UserPlusIcon, 
+                      title: 'Add User', 
+                      count: '', 
+                      color: 'from-violet-500',
+                      onClick: handleAddUserClick
+                    },
+                    { 
+                      icon: CalendarIcon, 
+                      title: 'Daily Assignment', 
+                      count: '', 
+                      color: 'from-green-500',
+                      onClick: handleDailyAssignmentClick
+                    },
+                    { 
+                      icon: DocumentTextIcon, 
+                      title: 'View Assignments', 
+                      count: '', 
+                      color: 'from-purple-500',
+                      onClick: handleAssignmentViewClick
+                    }
                   ].map((action, index) => (
                     <button
                       key={index}
                       className="group relative flex flex-col items-center p-6 rounded-2xl bg-gradient-to-br from-white/80 to-gray-50/80 border border-fuchsia-800/20 shadow-sm hover:shadow-xl hover:shadow-fuchsia-800/20 hover:bg-gradient-to-br hover:from-fuchsia-50 hover:to-rose-50 transition-all duration-500 hover:scale-105 hover:-translate-y-1"
+                      onClick={action.onClick}
                     >
                       <div className={`p-3 rounded-xl bg-gradient-to-br ${action.color} to-pink-600 shadow-lg mb-4 group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
                         <action.icon className="h-6 w-6 text-white" />
                       </div>
                       <h4 className="font-semibold text-gray-900 text-center mb-1">{action.title}</h4>
-                      <p className="text-sm text-fuchsia-700 font-medium">{action.count}</p>
+                      {action.count && <p className="text-sm text-fuchsia-700 font-medium">{action.count}</p>}
                     </button>
                   ))}
                 </div>
@@ -245,11 +285,11 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </div>
 
       {/* Footer */}
-      <footer className="bg-white/95 backdrop-blur-2xl border-t border-fuchsia-800/20 mt-12">
+      <footer className="bg-white/95 backdrop-blur-2xl border-t border-fuchsia-800/20">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-sm text-gray-600">
@@ -268,23 +308,22 @@ const Dashboard = () => {
 
       {/* Custom Animations */}
       <style>{`
-  @keyframes blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
-  }
-  .animate-blob {
-    animation: blob 7s infinite;
-  }
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
-  .animation-delay-4000 {
-    animation-delay: 4s;
-  }
-`}</style>
-
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,14 +1,19 @@
+// index.js
+// (Modified from provided: Removed mongoose, added Prisma routes, seed route, health)
+
 import dotenv from 'dotenv';
 dotenv.config();
-import mongoose from 'mongoose';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-import authRoute from './routes/auth.route.js'
-
+import usersRoute from './routes/users.route.js';
+import assignmentsRoute from './routes/assignments.route.js';
+import { seedUsers } from './utils/seed.js';
+import { prisma } from './utils/prismaClient.js';
 
 const app = express();
+
 // DEBUG — SEE EXACTLY WHAT'S HITTING YOUR SERVER
 app.use((req, res, next) => {
   console.log("INCOMING REQUEST →", req.method, req.url);
@@ -30,7 +35,24 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.use('/api/auth', authRoute)
+app.use('/api/users', usersRoute);
+app.use('/api/assignments', assignmentsRoute);
+
+// Seed route (for development - remove in production)
+app.post('/api/seed', async (req, res) => {
+  try {
+    await seedUsers();
+    res.json({ message: 'Users seeded successfully' });
+  } catch (error) {
+    console.error('Error seeding users:', error);
+    res.status(500).json({ error: 'Failed to seed users' });
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
 
 // Error handler
 app.use((error, req, res, next) => {
@@ -43,5 +65,4 @@ app.use((error, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`SERVER RUNNING ON http://10.14.212.253:${PORT}`);
- 
 });
