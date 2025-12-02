@@ -12,7 +12,8 @@ import {
   EyeIcon,
   UserPlusIcon,
   CalendarIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
@@ -70,6 +71,10 @@ const Dashboard = () => {
 
   const handleAssignmentViewClick = () => {
     navigate('/assignment-view');
+  };
+
+  const handleBranchManagementClick = () => {
+    navigate('/branch-management');
   };
 
   if (loading) {
@@ -225,6 +230,13 @@ const Dashboard = () => {
                       count: '', 
                       color: 'from-purple-500',
                       onClick: handleAssignmentViewClick
+                    },
+                    { 
+                      icon: BuildingOfficeIcon, 
+                      title: 'Branch Management', 
+                      count: '', 
+                      color: 'from-orange-500',
+                      onClick: handleBranchManagementClick
                     }
                   ].map((action, index) => (
                     <button
