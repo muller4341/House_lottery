@@ -11,24 +11,35 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-model User {
-  id            String   @id @default(uuid())
-  employeeId    String   @unique
-  name          String
-  role          Role
-  phone         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
 
-  // Relations (one-to-many from User to Assignment)
-  // Account Officer: No relation (manual 4-digit ID)
+// ────────────────────── NEW LOWERCASE ROLES (only one enum!) ──────────────────────
+enum Role {
+  user      // default role for everyone
+  officer
+  leader
+  manager
+}
+
+// ────────────────────── USER MODEL ──────────────────────
+model User {
+  id         String    @id @default(uuid())
+  employeeId String    @unique
+  name       String
+  role       Role      @default(user)   // ← default is lowercase "user"
+  phone      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
   assignedAsOfficer1 Assignment[] @relation("Officer1Assignments")
   assignedAsOfficer2 Assignment[] @relation("Officer2Assignments")
   assignedAsTL1      Assignment[] @relation("TL1Assignments")
   assignedAsTL2      Assignment[] @relation("TL2Assignments")
 
   @@map("users")
+
 }
+
 
 model Assignment {
   id                      String   @id @default(uuid())
@@ -66,8 +77,3 @@ model Assignment {
   @@map("assignments")
 }
 
-enum Role {
-  OFFICER
-  TEAM_LEADER
-  CENTRAL_KYC_MANAGER
-}
