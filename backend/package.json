@@ -17,7 +17,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.2.1",
+    "@prisma/client": "^6.19.0",
+    "activedirectory2": "^2.2.0",
     "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
@@ -29,11 +30,13 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "ldapjs": "^3.0.7",
+    "ldapts": "^8.0.9",
     "mongodb": "^6.18.0",
     "mongoose": "^8.17.1",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.1",
     "path": "^0.12.7",
+    "prisma": "^6.19.0",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5"
   },
@@ -43,7 +46,6 @@
     "@babel/preset-react": "^7.27.1",
     "babel-jest": "^30.0.5",
     "jest": "^30.0.5",
-    "nodemon": "^3.1.10",
-    "prisma": "^6.2.1"
+    "nodemon": "^3.1.10"
   }
 }

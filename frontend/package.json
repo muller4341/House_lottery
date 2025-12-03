@@ -11,12 +11,15 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@reduxjs/toolkit": "^2.11.0",
     "@tailwindcss/vite": "^4.1.17",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.6",
     "tailwindcss": "^4.1.17",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "xlsx-import": "^2.4.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

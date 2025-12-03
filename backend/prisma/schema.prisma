@@ -9,6 +9,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+enum Role {
+  OFFICER
+  TEAM_LEADER
+  CENTRAL_KYC_MANAGER
+  USER
+}
+
+
+// ────────────────────── USER MODEL ──────────────────────
 model User {
   id            String   @id @default(uuid())
   employeeId    String   @unique
@@ -28,6 +38,7 @@ model User {
   auditLogs         AuditLog[]
 
   @@map("users")
+
 }
 
 model Branch {
@@ -107,8 +118,3 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-enum Role {
-  OFFICER
-  TEAM_LEADER
-  CENTRAL_KYC_MANAGER
-}
