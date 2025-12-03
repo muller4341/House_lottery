@@ -181,7 +181,7 @@ export const signin = async (req, res) => {
         employeeId,
         name,
         phone,
-        role: "user"   // only first time
+        role: "USER"   // only first time
       }
     });
 

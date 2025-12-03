@@ -701,20 +701,7 @@ const DailyAssignmentPage = () => {
         </main>
       </div>
 
-      <footer className="bg-white/95 backdrop-blur-2xl border-t border-fuchsia-800/20 w-full flex-shrink-0 py-3 lg:py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-xs lg:text-sm text-gray-600">
-              © 2025 <span className="font-bold bg-gradient-to-r from-fuchsia-800 via-rose-700 to-pink-700 bg-clip-text text-transparent">
-                Commercial Bank of Ethiopia - የኢትዮጵያ ንግድ ባንክ
-              </span>. All rights reserved.
-            </p>
-            <p className="mt-1 text-xs text-fuchsia-800/60">
-              Central KYC Portal • Powered by LDAP Enterprise Authentication
-            </p>
-          </div>
-        </div>
-      </footer>
+      
 
       <style>{`
         @keyframes blob {

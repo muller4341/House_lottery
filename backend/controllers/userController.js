@@ -194,3 +194,58 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to update user status' });
   }
 };
+
+// GET CURRENT LOGGED-IN USER — /api/user/me
+export const getCurrentUser = async (req, res) => {
+  try {
+    // verifyUser middleware already ran → req.user exists
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    // Return fresh user data from database (req.user comes from verifyUser)
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        name: req.user.name,
+        email: req.user.email,
+        role: req.user.role,           // ← "MANAGER" or "OFFICER"
+        employeeId: req.user.employeeId,
+        department: req.user.department,
+        // add any other fields you need
+      },
+    });
+  } catch (error) {
+    console.log("Error in getCurrentUser:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// ADD THIS TO YOUR EXISTING userController.js
+export const logoutUser = async (req, res) => {
+  try {
+    // Clear the JWT cookie
+    res.cookie('jwt', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      expires: new Date(0),
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Logged out successfully' 
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ success: false, message: 'Logout failed' });
+  }
+};

@@ -1,12 +1,3 @@
-// BranchManagementPage.jsx
-// New: CRUD UI for Branches (create/edit/delete/view).
-// Similar style to AddUserPage: Form + Table.
-// Only Managers can access/edit.
-// Fetches/saves via /api/branches.
-// Responsive, professional.
-// Added: Bulk upload via Excel/JSON for creation.
-// Added: Modal popups for view/edit instead of route navigation.
-// Updated: Professional bulk upload UI with always-visible Choose & Upload buttons (Upload disabled until file selected).
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -545,23 +536,7 @@ const BranchManagementPage = () => {
                     </div>
                 </div>
             )}
-
-            <footer className="bg-white/95 backdrop-blur-2xl border-t border-fuchsia-800/20 w-full flex-shrink-0 py-3 lg:py-4">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center">
-                        <p className="text-xs lg:text-sm text-gray-600">
-                            © 2025 <span className="font-bold bg-gradient-to-r from-fuchsia-800 via-rose-700 to-pink-700 bg-clip-text text-transparent">
-                                Commercial Bank of Ethiopia - የኢትዮጵያ ንግድ ባንክ
-                            </span>. All rights reserved.
-                        </p>
-                        <p className="mt-1 text-xs text-fuchsia-800/60">
-                            Central KYC Portal • Powered by LDAP Enterprise Authentication
-                        </p>
-                    </div>
-                </div>
-            </footer>
-
-            <style>{`
+           <style>{`
         @keyframes blob {
           0% { transform: translate(0px, 0px) scale(1); }
           33% { transform: translate(30px, -50px) scale(1.1); }

@@ -1,8 +1,9 @@
+// store.js — FINAL CORRECT VERSION
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '../user/userSlice';
+import userReducer from '../user/userSlice';  // make sure path is correct
 
 export const store = configureStore({
   reducer: {
-    auth: authReducer,
+    user: userReducer,    // ← MUST BE "user"
   },
 });
