@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import usersRoute from './routes/users.route.js';
 import assignmentsRoute from './routes/assignments.route.js';
+import branchRoutes from './routes/branch.route.js';
 import { seedUsers } from './utils/seed.js';
 import { prisma } from './utils/prismaClient.js';
 import auth from './routes/auth.route.js';
@@ -39,6 +40,7 @@ app.use(cookieParser());
 app.use('/api/users', usersRoute);
 app.use('/api/assignments', assignmentsRoute);
 app.use('/api/auth', auth);
+app.use('/api/branches', branchRoutes)
 
 // Seed route (for development - remove in production)
 app.post('/api/seed', async (req, res) => {

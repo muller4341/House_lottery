@@ -124,7 +124,12 @@
 // controllers/auth.controller.js — FINAL FINAL FINAL (WORKS 100% AT CBE)
 import { Client } from 'ldapts';
 import jwt from "jsonwebtoken";
-import { prisma } from "../utils/prismaClient.js";
+import ldap from "ldapjs";
+import dotenv from "dotenv";
+dotenv.config();
+
+const LDAP_SERVER = process.env.LDAP_SERVER;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const LDAP_URL = 'ldap://10.1.11.13:389';
 const BASE_DN = 'DC=cbe,DC=com,DC=et';
@@ -133,7 +138,10 @@ export const signin = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ success: false, message: "Username and password required" });
+    return res.status(400).json({
+      success: false,
+      message: "Username and password required",
+    });
   }
 
   const client = new Client({ url: LDAP_URL });

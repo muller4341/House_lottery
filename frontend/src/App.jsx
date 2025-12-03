@@ -3,8 +3,9 @@ import Signin from './pages/Signin'
 import Dashboard from './pages/Dashboard'
 import AssignmentPage from './pages/AssignmentPage'
 import AddUserPage from './pages/AddUserPage'
-import AssignmentViewPage from './pages/AssignentViewPage'
+import AssignmentViewPage from './pages/AssignmentViewPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import BranchManagementPage from './pages/BranchManagementPage'
 
 function App() {
   
@@ -21,6 +22,7 @@ function App() {
 <Route path='/daily-assignment' element={<AssignmentPage/>}/>
 <Route path='/add-user' element={<AddUserPage/>}/>
 <Route path='/assignment-view' element={<AssignmentViewPage/>}/>
+<Route path='/branch-management' element={<BranchManagementPage/>}/>
     
   </Routes> 
   
