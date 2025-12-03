@@ -54,19 +54,27 @@ export const createAssignment = async (req, res) => {
     if (tl1Id && (tl1Shift !== 'I' && tl1Shift !== 'II')) return res.status(400).json({ error: 'TL1 shift must be I or II if assigned' });
     if (tl2Id && (tl2Shift !== 'I' && tl2Shift !== 'II')) return res.status(400).json({ error: 'TL2 shift must be I or II if assigned' });
 
-    // Find users (validate exist)
+    // Find users (validate exist and active)
     const officer1 = await prisma.user.findUnique({ where: { id: officer1Id } });
-    if (!officer1) return res.status(404).json({ error: 'Officer 1 not found' });
+    if (!officer1 || officer1.status !== 0) return res.status(404).json({ error: 'Active Officer 1 not found' });
     const officer2 = await prisma.user.findUnique({ where: { id: officer2Id } });
-    if (!officer2) return res.status(404).json({ error: 'Officer 2 not found' });
+    if (!officer2 || officer2.status !== 0) return res.status(404).json({ error: 'Active Officer 2 not found' });
     let tl1 = null, tl2 = null;
     if (tl1Id) {
       tl1 = await prisma.user.findUnique({ where: { id: tl1Id } });
-      if (!tl1) return res.status(404).json({ error: 'TL1 not found' });
+      if (!tl1 || tl1.status !== 0) return res.status(404).json({ error: 'Active TL1 not found' });
     }
     if (tl2Id) {
       tl2 = await prisma.user.findUnique({ where: { id: tl2Id } });
-      if (!tl2) return res.status(404).json({ error: 'TL2 not found' });
+      if (!tl2 || tl2.status !== 0) return res.status(404).json({ error: 'Active TL2 not found' });
+    }
+
+    // Validate same user on different shifts only
+    if (officer1Id === officer2Id && officer1Shift === officer2Shift) {
+      return res.status(400).json({ error: 'Same officer cannot be assigned to the same shift twice' });
+    }
+    if (tl1Id && tl2Id && tl1Id === tl2Id && tl1Shift === tl2Shift) {
+      return res.status(400).json({ error: 'Same team leader cannot be assigned to the same shift twice' });
     }
 
     // Check for duplicate assignment on same date/branch
@@ -155,7 +163,33 @@ export const updateAssignment = async (req, res) => {
     if (!date || !branchId || !officer1Id || !officer2Id || !officer1Shift || !officer2Shift || (!tl1Id && !tl2Id)) {
       return res.status(400).json({ error: 'Required fields missing' });
     }
-    // ... (add shift/user validations as in create)
+    if (officer1Shift !== 'I' && officer1Shift !== 'II') return res.status(400).json({ error: 'Officer 1 shift must be I or II' });
+    if (officer2Shift !== 'I' && officer2Shift !== 'II') return res.status(400).json({ error: 'Officer 2 shift must be I or II' });
+    if (tl1Id && (tl1Shift !== 'I' && tl1Shift !== 'II')) return res.status(400).json({ error: 'TL1 shift must be I or II if assigned' });
+    if (tl2Id && (tl2Shift !== 'I' && tl2Shift !== 'II')) return res.status(400).json({ error: 'TL2 shift must be I or II if assigned' });
+
+    // Find users (validate exist and active)
+    const officer1 = await prisma.user.findUnique({ where: { id: officer1Id } });
+    if (!officer1 || officer1.status !== 0) return res.status(404).json({ error: 'Active Officer 1 not found' });
+    const officer2 = await prisma.user.findUnique({ where: { id: officer2Id } });
+    if (!officer2 || officer2.status !== 0) return res.status(404).json({ error: 'Active Officer 2 not found' });
+    let tl1 = null, tl2 = null;
+    if (tl1Id) {
+      tl1 = await prisma.user.findUnique({ where: { id: tl1Id } });
+      if (!tl1 || tl1.status !== 0) return res.status(404).json({ error: 'Active TL1 not found' });
+    }
+    if (tl2Id) {
+      tl2 = await prisma.user.findUnique({ where: { id: tl2Id } });
+      if (!tl2 || tl2.status !== 0) return res.status(404).json({ error: 'Active TL2 not found' });
+    }
+
+    // Validate same user on different shifts only
+    if (officer1Id === officer2Id && officer1Shift === officer2Shift) {
+      return res.status(400).json({ error: 'Same officer cannot be assigned to the same shift twice' });
+    }
+    if (tl1Id && tl2Id && tl1Id === tl2Id && tl1Shift === tl2Shift) {
+      return res.status(400).json({ error: 'Same team leader cannot be assigned to the same shift twice' });
+    }
 
     // Check duplicate if date/branch changed
     const existing = await prisma.assignment.findFirst({
@@ -222,11 +256,11 @@ export const deleteAssignment = async (req, res) => {
 
     await prisma.assignment.delete({ where: { id } });
 
+    // Audit log
     if (userId) {
       await prisma.auditLog.create({
         data: {
           action: 'DELETE_ASSIGNMENT',
-          details: JSON.stringify({ deletedId: id }),
           userId,
           entityId: id
         }
@@ -235,40 +269,32 @@ export const deleteAssignment = async (req, res) => {
 
     res.json({ message: 'Assignment deleted successfully' });
   } catch (error) {
-    console.error('Delete assignment error:', error);
-    res.status(500).json({ error: error.message || 'Failed to delete assignment' });
+    console.error('Error deleting assignment:', error);
+    res.status(500).json({ error: 'Failed to delete assignment' });
   }
 };
 
-// GetAssignments (full)
 export const getAssignments = async (req, res) => {
   try {
-    const { page = 1, limit = 20, dateFrom, dateTo } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const where = {};
-    if (dateFrom) where.date = { gte: new Date(dateFrom) };
-    if (dateTo) where.date = { ...where.date, lte: new Date(dateTo) };
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+    const assignments = await prisma.assignment.findMany({
+      skip,
+      take: parseInt(limit),
+      orderBy: { date: 'desc' },
+      include: {
+        branch: { select: { name: true } },
+        officer1: { select: { name: true } },
+        officer2: { select: { name: true } },
+        tl1: { select: { name: true } },
+        tl2: { select: { name: true } }
+      }
+    });
+    const total = await prisma.assignment.count();
 
-    const [assignments, total] = await Promise.all([
-      prisma.assignment.findMany({
-        where,
-        skip,
-        take: parseInt(limit),
-        orderBy: { date: 'desc' },
-        include: {
-          branch: true,
-          officer1: { select: { id: true, name: true, phone: true } },
-          officer2: { select: { id: true, name: true, phone: true } },
-          tl1: { select: { id: true, name: true, phone: true } },
-          tl2: { select: { id: true, name: true, phone: true } }
-        }
-      }),
-      prisma.assignment.count({ where })
-    ]);
-
+    // Enrich with branchName if branch null (fallback)
     const enrichedAssignments = assignments.map(a => ({
       ...a,
-      accountOfficer: { employeeId: a.accountOfficerEmployeeId },
       branchName: a.branch?.name || a.branchName
     }));
 
@@ -306,13 +332,13 @@ export const bulkCreateAssignments = async (req, res) => {
         });
         if (!branch) throw new Error(`Branch "${row['Branch']}" not found`);
 
-        // Lookup users by name
+        // Lookup users by name (active only)
         const findUser = async (name) => {
           if (!name || name.trim() === '' || name === '-') return null;
           const user = await prisma.user.findFirst({
-            where: { name: { contains: name.trim(), mode: 'insensitive' } }
+            where: { name: { contains: name.trim(), mode: 'insensitive' }, status: 0 }
           });
-          if (!user) throw new Error(`User "${name}" not found`);
+          if (!user) throw new Error(`Active user "${name}" not found`);
           return user;
         };
 
@@ -336,6 +362,19 @@ export const bulkCreateAssignments = async (req, res) => {
         // Parse shifts (from 'Shift I' to 'I')
         const parseShift = (shiftStr) => shiftStr?.includes('I') ? 'I' : 'II';
 
+        const officer1Shift = parseShift(row['Officer 1 Shift']);
+        const officer2Shift = parseShift(row['Officer 2 Shift']);
+        const tl1Shift = tl1 ? parseShift(row['TL 1 Shift']) : null;
+        const tl2Shift = tl2 ? parseShift(row['TL 2 Shift']) : null;
+
+        // Validate same user on different shifts only
+        if (officer1.id === officer2.id && officer1Shift === officer2Shift) {
+          throw new Error('Same officer cannot be assigned to the same shift twice');
+        }
+        if (tl1 && tl2 && tl1.id === tl2.id && tl1Shift === tl2Shift) {
+          throw new Error('Same team leader cannot be assigned to the same shift twice');
+        }
+
         // Create assignment
         const assignment = await prisma.assignment.create({
           data: {
@@ -344,16 +383,16 @@ export const bulkCreateAssignments = async (req, res) => {
             branchName: branch.name,
             accountOfficerEmployeeId: row['AO ID']?.trim() || branch.accountOfficerId,
             officer1Id: officer1.id,
-            officer1Shift: parseShift(row['Officer 1 Shift']),
+            officer1Shift: officer1Shift,
             officer1Phone: row['Officer 1 Phone']?.trim() || officer1.phone || null,
             officer2Id: officer2.id,
-            officer2Shift: parseShift(row['Officer 2 Shift']),
+            officer2Shift: officer2Shift,
             officer2Phone: row['Officer 2 Phone']?.trim() || officer2.phone || null,
             tl1Id: tl1?.id || null,
-            tl1Shift: tl1 ? parseShift(row['TL 1 Shift']) : null,
+            tl1Shift: tl1Shift,
             tl1Phone: tl1 ? row['TL 1 Phone']?.trim() || tl1.phone || null : null,
             tl2Id: tl2?.id || null,
-            tl2Shift: tl2 ? parseShift(row['TL 2 Shift']) : null,
+            tl2Shift: tl2Shift,
             tl2Phone: tl2 ? row['TL 2 Phone']?.trim() || tl2.phone || null : null
           },
           include: {

@@ -1,11 +1,6 @@
 // AddUserPage.jsx
-// Updated: Removed ACCOUNT_OFFICER from roles array (non-relational ID).
-// Retained responsive design, table with capitalized roles.
-// Added: Actions column with Edit/Delete buttons.
-// Edit: Simple modal form (prefill, PUT /api/users/:id).
-// Delete: Confirm + DELETE /api/users/:id.
-// No other changes to UI/form.
-// Fixes: Enhanced error handling in add/edit for backend errors (parse json). Modal buttons: Added min-width/padding for text visibility. After update: Ensure modal closes + table refresh. Add: Improved fetch error logging. Fixed white screen: Added loading state during fetch, prevent re-render issues by using functional updates and key on table.
+// Soft Delete Implemented: status 0 = active, 1 = deleted
+// Only active users shown
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -60,9 +55,9 @@ const AddUserPage = () => {
   });
 
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);  // New: Loading state to prevent white screen
-  const [editingUser, setEditingUser] = useState(null);  // New: For edit modal
-  const [showEditModal, setShowEditModal] = useState(false);  // New: Edit modal state
+  const [loading, setLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const roles = [
     { value: 'OFFICER', label: 'Officer' },
@@ -77,6 +72,28 @@ const AddUserPage = () => {
     });
   };
 
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/users?status=0');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      } else {
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   const handleAddUser = async (e) => {
     e.preventDefault();
     if (!userForm.employeeId || !userForm.name || !userForm.role) {
@@ -84,7 +101,7 @@ const AddUserPage = () => {
       return;
     }
 
-    setLoading(true);  // Show loading
+    setLoading(true);
     try {
       const response = await fetch('/api/users', {
         method: 'POST',
@@ -94,31 +111,30 @@ const AddUserPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Add user error:', response.status, errorData);  // Log for debug
-        throw new Error(errorData.error || `Failed to add user (Status: ${response.status})`);
+        const message = errorData.error || errorData.message || `Failed to add user (Status: ${response.status})`;
+        throw new Error(message);
       }
 
       const newUser = await response.json();
-      setUsers(prev => [newUser, ...prev]);  // Functional update
+      setUsers(prev => [newUser, ...prev]);
       alert(`User ${userForm.name} added successfully!`);
       setUserForm({ employeeId: '', name: '', role: '', phone: '' });
     } catch (error) {
-      console.error('Error adding user:', error);
-      alert(`Failed to add user: ${error.message}. Please check console for details.`);
+      alert(`Failed to add user: ${error.message}`);
     } finally {
-      setLoading(false);  // Hide loading
-      fetchUsers();  // Refresh table
+      setLoading(false);
+      fetchUsers(); // Always refresh from server
     }
   };
 
-  const handleEditUser = async (e) => {  // New: Edit submit
+  const handleEditUser = async (e) => {
     e.preventDefault();
     if (!userForm.employeeId || !userForm.name || !userForm.role) {
       alert('Please fill required fields.');
       return;
     }
 
-    setLoading(true);  // Show loading
+    setLoading(true);
     try {
       const response = await fetch(`/api/users/${editingUser.id}`, {
         method: 'PUT',
@@ -128,30 +144,26 @@ const AddUserPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Edit user error:', response.status, errorData);  // Log for debug
-        throw new Error(errorData.error || `Failed to update user (Status: ${response.status})`);
+        const message = errorData.error || errorData.message || `Failed to update user (Status: ${response.status})`;
+        throw new Error(message);
       }
 
-      const updatedUser = await response.json();
-      setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));  // Functional update
       alert(`User ${userForm.name} updated successfully!`);
-      setUserForm({ employeeId: '', name: '', role: '', phone: '' });
+      setShowEditModal(false);
       setEditingUser(null);
-      setShowEditModal(false);  // Close modal after alert (before OK click)
-      // No need for navigate('/add-user') as we're already on the page; just refresh
+      setUserForm({ employeeId: '', name: '', role: '', phone: '' });
     } catch (error) {
-      console.error('Error updating user:', error);
-      alert(`Failed to update user: ${error.message}. Please check console for details.`);
+      alert(`Failed to update user: ${error.message}`);
     } finally {
-      setLoading(false);  // Hide loading
-      fetchUsers();  // Refresh table to ensure page loads
+      setLoading(false);
+      fetchUsers(); // This ensures page loads data correctly after update
     }
   };
 
-  const handleDeleteUser = async (userId) => {  // New: Delete
+  const handleDeleteUser = async (userId) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
-    setLoading(true);  // Show loading
+    setLoading(true);
     try {
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE'
@@ -159,21 +171,20 @@ const AddUserPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to delete user');
+        const message = errorData.error || errorData.message || 'Failed to deactivate user';
+        throw new Error(message);
       }
 
-      setUsers(prev => prev.filter(u => u.id !== userId));  // Functional update
-      alert('User deleted successfully!');
+      alert('User deactivated successfully!');
     } catch (error) {
-      console.error('Error deleting user:', error);
       alert(`Failed: ${error.message}`);
     } finally {
       setLoading(false);
-      fetchUsers();  // Refresh table
+      fetchUsers();
     }
   };
 
-  const openEditModal = (u) => {  // New: Open edit
+  const openEditModal = (u) => {
     setEditingUser(u);
     setUserForm({
       employeeId: u.employeeId,
@@ -184,36 +195,13 @@ const AddUserPage = () => {
     setShowEditModal(true);
   };
 
-  const fetchUsers = async () => {
-    setLoading(true);  // Show loading during fetch
-    try {
-      const response = await fetch('/api/users');
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      } else {
-        console.error('Fetch users error:', response.status);
-        setUsers([]);  // Fallback to empty array to prevent white screen
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setUsers([]);  // Fallback
-    } finally {
-      setLoading(false);  // Always hide loading
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const handleBack = () => {
     navigate('/dashboard');
   };
 
   const capitalizeRole = (role) => role.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-pink-50/90 flex items-center justify-center">
         <div className="text-center p-8">
@@ -221,7 +209,7 @@ const AddUserPage = () => {
           <p className="text-gray-600">Loading users...</p>
         </div>
       </div>
-    );  // Prevent white screen during load
+    );
   }
 
   return (
@@ -275,7 +263,7 @@ const AddUserPage = () => {
                     onChange={handleFormChange}
                     className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-fuchsia-300 rounded-lg lg:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-300 hover:border-fuchsia-400 text-sm"
                     required
-                    disabled={loading}  // Disable during load
+                    disabled={loading}
                   />
                 </div>
                 <div>
@@ -341,7 +329,7 @@ const AddUserPage = () => {
               </div>
               <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-fuchsia-200" key={users.length}>  {/* Key to force re-render */}
+                  <table className="min-w-full divide-y divide-fuchsia-200">
                     <thead className="bg-fuchsia-50 sticky top-0">
                       <tr>
                         <th className="px-3 py-3 text-left text-xs font-bold text-fuchsia-700 uppercase tracking-wider">Employee ID</th>
@@ -349,7 +337,7 @@ const AddUserPage = () => {
                         <th className="px-3 py-3 text-left text-xs font-bold text-fuchsia-700 uppercase tracking-wider">Role</th>
                         <th className="px-3 py-3 text-left text-xs font-bold text-fuchsia-700 uppercase tracking-wider">Phone</th>
                         <th className="px-3 py-3 text-left text-xs font-bold text-fuchsia-700 uppercase tracking-wider">Created At</th>
-                        <th className="px-3 py-3 text-left text-xs font-bold text-fuchsia-700 uppercase tracking-wider">Actions</th>  {/* New */}
+                        <th className="px-3 py-3 text-left text-xs font-bold text-fuchsia-700 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-fuchsia-200">
@@ -360,7 +348,7 @@ const AddUserPage = () => {
                           <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">{capitalizeRole(u.role)}</td>
                           <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">{u.phone || 'N/A'}</td>
                           <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-500">{formatDate(u.createdAt)}</td>
-                          <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-500">  {/* New Actions */}
+                          <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => openEditModal(u)}
@@ -399,7 +387,7 @@ const AddUserPage = () => {
         </main>
       </div>
 
-      {/* New: Edit Modal */}
+      {/* Edit Modal */}
       {showEditModal && editingUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -516,19 +504,6 @@ const AddUserPage = () => {
         }
         .animation-delay-4000 {
           animation-delay: 4s;
-        }
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out;
         }
       `}</style>
     </div>

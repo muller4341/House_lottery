@@ -1,8 +1,4 @@
 // prisma/schema.prisma
-// Updated: Added Branch model for branch name + 4-digit AO ID (unique, non-relational).
-// Retained existing models (User, Assignment, Document, AuditLog).
-// Shifts (I/II) for officers/TLs per BRD.
-// FR-19: Export supports Excel via controller.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -19,17 +15,15 @@ model User {
   name          String
   role          Role
   phone         String?
+  status        Int      @default(0)  // 0 = Active, 1 = Deleted/Inactive
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relations (one-to-many from User to Assignment)
-  // Account Officer: No relation (manual 4-digit ID in Branch)
   assignedAsOfficer1 Assignment[] @relation("Officer1Assignments")
   assignedAsOfficer2 Assignment[] @relation("Officer2Assignments")
   assignedAsTL1      Assignment[] @relation("TL1Assignments")
   assignedAsTL2      Assignment[] @relation("TL2Assignments")
 
-  // Relations to Document and AuditLog
   uploadedDocuments Document[]
   auditLogs         AuditLog[]
 
@@ -38,83 +32,77 @@ model User {
 
 model Branch {
   id                   String   @id @default(uuid())
-  name                 String   // Branch Name
-  accountOfficerId     String   @unique  // 4-digit unique ID
+  name                 String
+  accountOfficerId     String   @unique
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
-
-  // Optional relation to Assignment (one-to-many)
   assignments          Assignment[]
 
   @@map("branches")
 }
 
 model Assignment {
-  id                      String   @id @default(uuid())
-  date                    DateTime @db.Date  // Date-only storage
-  branchId                String   // FK to Branch (instead of free-text)
-  branchName              String   // Denormalized for quick display (populated on create/update)
-  accountOfficerEmployeeId String  // NEW: Add this line - Denormalized 4-digit AO ID from branch.accountOfficerId
+  id                       String    @id @default(uuid())
+  date                     DateTime  @db.Date
+  branchId                 String
+  branchName               String
+  accountOfficerEmployeeId String
 
-  // Officers: Required
-  officer1Id              String   // Non-optional
-  officer1Shift           String   // 'I' or 'II' - Required for officers
-  officer1Phone           String?  // Optional override from User.phone
+  officer1Id               String
+  officer1Shift            String
+  officer1Phone            String?
 
-  officer2Id              String   // Non-optional
-  officer2Shift           String   // 'I' or 'II' - Required for officers
-  officer2Phone           String?  // Optional override
+  officer2Id               String
+  officer2Shift            String
+  officer2Phone            String?
 
-  // Team Leaders: Optional (but at least one enforced in controller)
-  tl1Id                   String?
-  tl1Shift                String?  // Optional, required if assigned
-  tl1Phone                String?  // Optional override
+  tl1Id                    String?
+  tl1Shift                 String?
+  tl1Phone                 String?
 
-  tl2Id                   String?
-  tl2Shift                String?  // Optional, required if assigned
-  tl2Phone                String?  // Optional override
+  tl2Id                    String?
+  tl2Shift                 String?
+  tl2Phone                 String?
 
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
-  // Relations
-  branch                  Branch   @relation(fields: [branchId], references: [id])
-  officer1                User     @relation("Officer1Assignments", fields: [officer1Id], references: [id])
-  officer2                User     @relation("Officer2Assignments", fields: [officer2Id], references: [id])
-  tl1                     User?    @relation("TL1Assignments", fields: [tl1Id], references: [id])
-  tl2                     User?    @relation("TL2Assignments", fields: [tl2Id], references: [id])
+  branch                   Branch    @relation(fields: [branchId], references: [id])
+  officer1                 User      @relation("Officer1Assignments", fields: [officer1Id], references: [id])
+  officer2                 User      @relation("Officer2Assignments", fields: [officer2Id], references: [id])
+  tl1                      User?     @relation("TL1Assignments", fields: [tl1Id], references: [id])
+  tl2                      User?     @relation("TL2Assignments", fields: [tl2Id], references: [id])
 
-  // Optional relation to Document
-  documents               Document[]
+  documents                Document[]
 
   @@map("assignments")
 }
 
 model Document {
-  id              String   @id @default(uuid())
-  name            String
-  filePath        String   // Server path or URL to PDF
-  uploadedById    String
-  assignmentId    String?  // Optional link to specific assignment
+  id           String    @id @default(uuid())
+  name         String
+  filePath     String
+  uploadedById String
+  assignmentId String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  uploadedBy      User     @relation(fields: [uploadedById], references: [id])
-  assignment      Assignment? @relation(fields: [assignmentId], references: [id])
+  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
+  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
 
   @@map("documents")
 }
 
 model AuditLog {
   id        String   @id @default(uuid())
-  action    String   // e.g., 'CREATE_ASSIGNMENT', 'UPDATE_USER'
-  details   String?  // JSON string of changes
+  action    String
+  details   String?
   userId    String
-  entityId  String?  // ID of affected entity (assignment/user/branch)
+  entityId  String?
   createdAt DateTime @default(now())
 
-  user      User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
 }

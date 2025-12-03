@@ -1,15 +1,14 @@
 // controllers/userController.js
-// Updated: Removed ACCOUNT_OFFICER from validRoles (non-relational ID only).
-// Retained audit logging on create.
-// Enhanced professional error responses.
-// Added: updateUser, deleteUser (with validation, unique check, prevent delete if assigned, audit).
 
 import { prisma } from '../utils/prismaClient.js'
 
 export const getUsers = async (req, res) => {
   try {
     const { role } = req.query;
-    const whereClause = role ? { role } : {};
+    const whereClause = {
+      status: 0,  // Only active users
+      ...(role && { role })
+    };
     const users = await prisma.user.findMany({
       where: whereClause,
       select: {
@@ -32,32 +31,29 @@ export const getUsers = async (req, res) => {
 export const createUser = async (req, res) => {
   try {
     const { employeeId, name, role, phone } = req.body;
-    const userId = req.user?.id;  // Assume from auth middleware
+    const userId = req.user?.id;
 
-    // Validate required fields
     if (!employeeId || !name || !role) {
       return res.status(400).json({ error: 'Employee ID, Name, and Role are required' });
     }
 
-    // Validate role enum (removed ACCOUNT_OFFICER)
     const validRoles = ['OFFICER', 'TEAM_LEADER', 'CENTRAL_KYC_MANAGER'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ error: 'Invalid role specified' });
     }
 
-    // Check if employeeId already exists
     const existingUser = await prisma.user.findUnique({ where: { employeeId } });
     if (existingUser) {
       return res.status(409).json({ error: 'Employee ID already exists' });
     }
 
-    // Create user
     const newUser = await prisma.user.create({
       data: {
         employeeId,
         name,
         role,
-        phone: phone || null
+        phone: phone || null,
+        status: 0
       },
       select: {
         id: true,
@@ -69,7 +65,6 @@ export const createUser = async (req, res) => {
       }
     });
 
-    // Log audit (Manager/Admin only, assume check)
     if (userId) {
       await prisma.auditLog.create({
         data: {
@@ -88,14 +83,12 @@ export const createUser = async (req, res) => {
   }
 };
 
-// New: Update
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { employeeId, name, role, phone } = req.body;
     const userId = req.user?.id;
 
-    // Validate
     if (!employeeId || !name || !role) {
       return res.status(400).json({ error: 'Employee ID, Name, and Role are required' });
     }
@@ -104,13 +97,11 @@ export const updateUser = async (req, res) => {
       return res.status(400).json({ error: 'Invalid role specified' });
     }
 
-    // Check if employeeId already exists (not self)
     const existingUser = await prisma.user.findUnique({ where: { employeeId } });
     if (existingUser && existingUser.id !== id) {
       return res.status(409).json({ error: 'Employee ID already exists' });
     }
 
-    // Update
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
@@ -129,7 +120,6 @@ export const updateUser = async (req, res) => {
       }
     });
 
-    // Audit log
     if (userId) {
       await prisma.auditLog.create({
         data: {
@@ -148,13 +138,22 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// New: Delete
+// Soft Delete → Toggle status (0 <-> 1)
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
 
-    // Check if user has assignments (prevent delete if used)
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { status: true, name: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Prevent deletion if user has assignments
     const assignmentCount = await prisma.assignment.count({
       where: {
         OR: [
@@ -165,27 +164,33 @@ export const deleteUser = async (req, res) => {
         ]
       }
     });
+
     if (assignmentCount > 0) {
       return res.status(400).json({ error: 'Cannot delete user with existing assignments' });
     }
 
-    // Delete
-    await prisma.user.delete({ where: { id } });
+    const newStatus = targetUser.status === 0 ? 1 : 0;
+    await prisma.user.update({
+      where: { id },
+      data: { status: newStatus }
+    });
 
-    // Audit log
+    const action = newStatus === 1 ? 'DEACTIVATE_USER' : 'REACTIVATE_USER';
+
     if (userId) {
       await prisma.auditLog.create({
         data: {
-          action: 'DELETE_USER',
+          action,
+          details: JSON.stringify({ name: targetUser.name, newStatus }),
           userId,
           entityId: id
         }
       });
     }
 
-    res.json({ message: 'User deleted successfully' });
+    res.json({ message: 'User status updated successfully' });
   } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ error: 'Failed to delete user' });
+    console.error('Error toggling user status:', error);
+    res.status(500).json({ error: 'Failed to update user status' });
   }
 };
