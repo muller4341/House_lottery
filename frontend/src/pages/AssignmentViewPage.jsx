@@ -169,7 +169,7 @@ const AssignmentViewPage = () => {
                   <CheckIcon className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl lg:text-3xl font-black text-gray-900">Daily Assignments</h2>
+                  <h2 className="text-2xl lg:text-3xl font-black text-gray-900">Daily Assigned Officers and Team Leaders</h2>
                   <p className="text-sm text-gray-600 mt-1">Today & Future Schedules</p>
                 </div>
               </div>

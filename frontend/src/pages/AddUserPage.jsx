@@ -58,8 +58,10 @@ const AddUserPage = () => {
   const [loading, setLoading] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const roles = [
+    { value: 'USER', label: 'User' },
     { value: 'OFFICER', label: 'Officer' },
     { value: 'TEAM_LEADER', label: 'Team Leader' },
     { value: 'CENTRAL_KYC_MANAGER', label: 'Central KYC Manager' }
@@ -96,55 +98,117 @@ const AddUserPage = () => {
 
   const handleAddUser = async (e) => {
     e.preventDefault();
+
     if (!userForm.employeeId || !userForm.name || !userForm.role) {
       alert('Please fill required fields.');
       return;
     }
 
+    // 🔍 LOCAL DUPLICATE CHECK
+    const existingUser = users.find(u => u.employeeId === userForm.employeeId.trim());
+
+    if (existingUser) {
+      // 👉 Load user data into edit form
+      setEditingUser(existingUser);
+      setUserForm({
+        employeeId: existingUser.employeeId,
+        name: existingUser.name,
+        role: existingUser.role,
+        phone: existingUser.phone || '',
+      });
+      setShowEditModal(true);
+      return;
+    }
+
     setLoading(true);
+
     try {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userForm)
+        body: JSON.stringify(userForm),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const newUser = await response.json();
+        setUsers(prev => [newUser, ...prev]);
+        alert(`User ${userForm.name} added successfully!`);
+        setUserForm({ employeeId: '', name: '', role: '', phone: '' });
+      } else {
         const errorData = await response.json().catch(() => ({}));
-        const message = errorData.error || errorData.message || `Failed to add user (Status: ${response.status})`;
-        throw new Error(message);
-      }
+        const message =
+          errorData.error ||
+          errorData.message ||
+          `Failed to add user (Status: ${response.status})`;
 
-      const newUser = await response.json();
-      setUsers(prev => [newUser, ...prev]);
-      alert(`User ${userForm.name} added successfully!`);
-      setUserForm({ employeeId: '', name: '', role: '', phone: '' });
+        const lowerMsg = message.toLowerCase();
+
+        // 🛑 Detect duplicate from backend (409 or message)
+        if (
+          response.status === 409 ||
+          lowerMsg.includes("employee") ||
+          lowerMsg.includes("duplicate") ||
+          lowerMsg.includes("exist")
+        ) {
+          // Refetch all users to ensure latest data
+          const freshResponse = await fetch('/api/users?status=0');
+          let freshUsers = [];
+          if (freshResponse.ok) {
+            freshUsers = await freshResponse.json();
+            setUsers(freshUsers);
+          }
+          const existingUser = freshUsers.find(
+            u => u.employeeId === userForm.employeeId.trim()
+          );
+          console.log('Detected duplicate user from backend:', existingUser);
+
+          if (existingUser) {
+            // 👉 Load user into edit modal correctly
+            setEditingUser(existingUser);
+            setUserForm({
+              employeeId: existingUser.employeeId,
+              name: existingUser.name || userForm.name,
+              role: existingUser.role,
+              phone: existingUser.phone || userForm.phone,
+            });
+            setShowEditModal(true);
+            return; // stop alert
+          }
+        }
+
+        alert(`Failed to add user: ${message}`);
+      }
     } catch (error) {
       alert(`Failed to add user: ${error.message}`);
     } finally {
       setLoading(false);
-      fetchUsers(); // Always refresh from server
+      fetchUsers();
     }
   };
 
   const handleEditUser = async (e) => {
     e.preventDefault();
+
     if (!userForm.employeeId || !userForm.name || !userForm.role) {
       alert('Please fill required fields.');
       return;
     }
 
     setLoading(true);
+
     try {
       const response = await fetch(`/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userForm)
+        body: JSON.stringify(userForm),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const message = errorData.error || errorData.message || `Failed to update user (Status: ${response.status})`;
+        const message =
+          errorData.error ||
+          errorData.message ||
+          `Failed to update user (Status: ${response.status})`;
         throw new Error(message);
       }
 
@@ -156,7 +220,7 @@ const AddUserPage = () => {
       alert(`Failed to update user: ${error.message}`);
     } finally {
       setLoading(false);
-      fetchUsers(); // This ensures page loads data correctly after update
+      fetchUsers();
     }
   };
 
@@ -200,6 +264,10 @@ const AddUserPage = () => {
   };
 
   const capitalizeRole = (role) => role.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+
+  const displayedUsers = searchTerm
+    ? users.filter(u => u.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) || u.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : users.filter(u => ['OFFICER', 'TEAM_LEADER', 'CENTRAL_KYC_MANAGER'].includes(u.role));
 
   if (loading && users.length === 0) {
     return (
@@ -290,7 +358,7 @@ const AddUserPage = () => {
                   >
                     <option value="">Select Role</option>
                     {roles.map(r => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
+                      <option key={r.value} value={r.value}>{r.label.toUpperCase()}</option>
                     ))}
                   </select>
                 </div>
@@ -325,7 +393,16 @@ const AddUserPage = () => {
                 <div className="p-2 sm:p-3 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl lg:rounded-2xl shadow-lg flex-shrink-0">
                   <CheckIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
-                <h2 className="text-xl sm:text-2xl lg:text-2xl font-black text-gray-900">All Users</h2>
+                <h2 className="text-xl sm:text-2xl lg:text-2xl font-black text-gray-900">All Officer/Team Leader/Manager</h2>
+              </div>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search by Employee ID or Name to get any Employee....."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 border border-fuchsia-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm transition-all duration-300 hover:border-fuchsia-400 text-sm"
+                />
               </div>
               <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="overflow-x-auto">
@@ -341,7 +418,7 @@ const AddUserPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-fuchsia-200">
-                      {users.map((u) => (
+                      {displayedUsers.map((u) => (
                         <tr key={u.id} className="hover:bg-fuchsia-50 transition-colors duration-200">
                           <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">{u.employeeId}</td>
                           <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">{u.name}</td>
@@ -373,7 +450,7 @@ const AddUserPage = () => {
                     </tbody>
                   </table>
                 </div>
-                {users.length === 0 && !loading && (
+                {displayedUsers.length === 0 && !loading && (
                   <div className="text-center py-8 flex-1 flex items-center justify-center">
                     <div className="space-y-2">
                       <CheckIcon className="h-12 w-12 text-gray-300 mx-auto" />
