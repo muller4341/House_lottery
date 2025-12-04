@@ -35,7 +35,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white backdrop-blur-md border-b border-gray-200 shadow-md z-50">
+    <header className="fixed top-0 left-0 right-0 bg-fuchsia-900 backdrop-blur-md border-b border-gray-200 shadow-md z-50">
       <div className="px-4 sm:px-8">
         <div className="flex justify-between items-center py-3 relative">
 
@@ -44,9 +44,9 @@ const Navbar = () => {
             to="/dashboard"
             className="flex items-center space-x-3 hover:opacity-80 transition-all"
           >
-            <div className="w-10 h-10 bg-gradient-to-r from-fuchsia-700 to-rose-600 rounded-full flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-gradient-to-r from-fuchsia-700 to-rose-600 rounded-full flex items-center justify-center shadow-md">
               <svg
-                className="w-6 h-6 text-white"
+                className="w-10 h-10 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -61,7 +61,7 @@ const Navbar = () => {
             </div>
 
             <div className="hidden sm:block leading-tight">
-              <h1 className="text-sm font-black bg-gradient-to-r from-fuchsia-700 to-rose-600 bg-clip-text text-transparent">
+              <h1 className="text-[10px] font-black bg-gradient-to-r from-fuchsia-600 to-rose-600 bg-clip-text text-transparent">
                 CBE KYC
               </h1>
               <p className="text-[10px] font-semibold tracking-wide text-gray-500">

@@ -12,7 +12,20 @@
 // const BASE_DN = 'DC=cbe,DC=com,DC=et';
 
 // export const signin = async (req, res) => {
+//   // Only auto-return if it's the SAME user
+  
 //   const { username, password } = req.body;
+
+//   if (req.user && username) {
+//     const expectedId = `CBE-${username}`;
+//     if (req.user.employeeId === expectedId || req.user.employeeId.endsWith(username)) {
+//       return res.json({
+//         success: true,
+//         message: "Welcome back!",
+//         user: req.user
+//       });
+//     }
+//   }
 
 //   if (!username || !password) {
 //     return res.status(400).json({

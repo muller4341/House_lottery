@@ -57,7 +57,7 @@
 //   }
 // };
 //   return (
-//     <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-pink-50/90 overflow-hidden">
+//     <div className="h-screen w-screen flex items-center justify-center bg-fuchsia-900 overflow-hidden">
 //       {/* Animated Background Particles - FUCHSIA-800 Edition */}
 //       <div className="fixed inset-0 overflow-hidden pointer-events-none">
 //         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-fuchsia-800/25 to-pink-600/25 rounded-full blur-3xl animate-blob"></div>
@@ -81,18 +81,18 @@
 //           </h1>
           
 //           {/* Subtitle */}
-//           <p className="mt-4 sm:mt-6 md:mt-8 lg:mt-10 xl:mt-12 max-w-2xl mx-auto text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl text-gray-700 font-semibold">
+//           <p className="mt-4 sm:mt-6 md:mt-8 lg:mt-10 xl:mt-12 max-w-2xl mx-auto text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl text-amber-700 font-semibold">
 //             Commercial Bank of Ethiopia
 //           </p>
           
 //           {/* Tagline */}
-//           <p className="mt-4 sm:mt-6 md:mt-8 lg:mt-10 max-w-2xl mx-auto text-xs sm:text-sm md:text-base lg:text-lg text-fuchsia-800/80 font-medium italic">
+//           <p className="mt-4 sm:mt-6 md:mt-8 lg:mt-10 max-w-2xl mx-auto text-xs sm:text-sm md:text-base lg:text-lg text-amber-700 font-medium italic">
 //             Secure • Fast • Enterprise Authentication
 //           </p>
           
-//           {/* Features - FUCHSIA-800 */}
+//           {/* Features - FUCHSIA-800
 //           <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6 max-w-2xl w-full">
-//             <div className="flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 bg-gradient-to-r from-fuchsia-800/10 to-rose-700/10 rounded-2xl border border-fuchsia-800/20 backdrop-blur-sm shadow-lg shadow-fuchsia-800/5">
+//             {/* <div className="flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 bg-gradient-to-r from-fuchsia-800/10 to-rose-700/10 rounded-2xl border border-fuchsia-800/20 backdrop-blur-sm shadow-lg shadow-fuchsia-800/5">
 //               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-fuchsia-800 to-rose-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-fuchsia-800/30">
 //                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 //                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -102,8 +102,8 @@
 //                 <p className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">LDAP Auth</p>
 //                 <p className="text-xs sm:text-sm text-fuchsia-800/80">Enterprise Security</p>
 //               </div>
-//             </div>
-//             <div className="flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 bg-gradient-to-r from-rose-700/10 to-pink-700/10 rounded-2xl border border-rose-700/20 backdrop-blur-sm shadow-lg shadow-rose-700/5">
+//             </div> */}
+//             {/* <div className="flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 bg-gradient-to-r from-rose-700/10 to-pink-700/10 rounded-2xl border border-rose-700/20 backdrop-blur-sm shadow-lg shadow-rose-700/5">
 //               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-rose-700 to-pink-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-rose-700/30">
 //                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 //                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -113,8 +113,8 @@
 //                 <p className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">Lightning Fast</p>
 //                 <p className="text-xs sm:text-sm text-rose-700/80">Instant Access</p>
 //               </div>
-//             </div>
-//           </div>
+//             </div> */}
+//           {/* </div>  */}
 //         </div>
 
 //         {/* Right Side - Login Form */}
@@ -158,7 +158,7 @@
 //             )}
 
 //             {/* Login Form Card - FUCHSIA-800 */}
-//             <div className="bg-white/95 backdrop-blur-2xl shadow-2xl rounded-3xl p-8 lg:p-10 xl:p-12 2xl:p-14 border border-fuchsia-800/20 shadow-fuchsia-800/10">
+//             <div className="bg-white/95 backdrop-blur-2xl shadow-2xl rounded-3xl p-16 lg:p-10 xl:p-12 2xl:p-14 border border-fuchsia-800/20 shadow-fuchsia-800/10">
 //               <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8 xl:space-y-10">
 //                 {/* Username Field */}
 //                 <div>
@@ -260,7 +260,7 @@
 //                 </button>
 //               </form>
 
-//               {/* Divider - FUCHSIA-800 */}
+//               {/* Divider - FUCHSIA-800
 //               <div className="relative my-10 lg:my-12 xl:my-14">
 //                 <div className="absolute inset-0 flex items-center">
 //                   <div className="w-full border-t-2 border-fuchsia-800/20" />
@@ -273,7 +273,7 @@
 //               </div>
 
 //               {/* Support - FUCHSIA-800 */}
-//               <div className="text-center py-8 lg:py-10 xl:py-12">
+//               {/* <div className="text-center py-8 lg:py-10 xl:py-12">
 //                 <p className="text-sm lg:text-base xl:text-lg text-gray-600 leading-relaxed">
 //                   Need assistance? Contact our IT Support Team:
 //                 </p>
@@ -297,22 +297,13 @@
 //                     </svg>
 //                   </a>
 //                 </div>
-//               </div>
+//               </div> */} 
 //             </div>
 //           </div>
 //         </div>
 //       </div>
 
-//       {/* Footer */}
-//       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center">
-//         <p className="text-xs sm:text-sm md:text-base text-gray-600/90 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-2xl border border-fuchsia-800/20 shadow-lg shadow-fuchsia-800/5">
-//           © 2025{' '}
-//           <span className="font-bold bg-gradient-to-r from-fuchsia-800 via-rose-700 to-pink-700 bg-clip-text text-transparent">
-//             Commercial Bank of Ethiopia
-//           </span>
-//           . All rights reserved. | Enterprise KYC Platform
-//         </p>
-//       </div>
+      
 
 //       {/* Custom CSS for Animations */}
 //       <style>{`

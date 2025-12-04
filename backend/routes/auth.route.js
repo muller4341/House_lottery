@@ -1,54 +1,83 @@
-// import express from 'express';
 
-// import {signin  } from '../controllers/auth.controller.js';
-// import verifyUser from '../utils/verifyUser.js'
+// import express from 'express';
+// import { signin } from '../controllers/auth.controller.js';
+// import verifyUser from '../utils/verifyUser.js';
 
 // const router = express.Router();
-// router.post('/signin', verifyUser, signin )
-// router.get("/verify", verifyUser, (req, res) => {
-//   res.status(200).json({
-//     success: true,
-//     user: req.user,
-//     employeeId: req.user.employeeId
-//        // req.user is already set by verifyUser middleware
-//   });
-// });~
+
+// // SMART MIDDLEWARE — verifyUser only runs if token exists AND user is already in DB
+// const optionalVerifyUser = async (req, res, next) => {
+//   const token = req.cookies.access_token || req.header('Authorization')?.replace('Bearer ', '');
+
+//   if (!token) {
+//     // No token → first-time login → skip verification
+//     return next();
+//   }
+
+//   try {
+//     // Token exists → try to verify (second-time login)
+//     await verifyUser(req, res, () => {
+//       // If verifyUser succeeds → user is authenticated → skip signin controller
+//       if (req.user) {
+//         return res.json({
+//           success: true,
+//           message: "Already logged in",
+//           user: req.user
+//         });
+//       }
+//       next(); // verifyUser failed → continue to signin
+//     });
+//   } catch {
+//     next(); // any error → continue to signin
+//   }
+// };
+
+// // FINAL ROUTE — ONE LINE DOES EVERYTHING
+// router.post('/signin', optionalVerifyUser, signin);
 
 // export default router;
-import express from 'express';
+// routes/auth.route.js
 import { signin } from '../controllers/auth.controller.js';
 import verifyUser from '../utils/verifyUser.js';
+import express from 'express';
 
 const router = express.Router();
 
-// SMART MIDDLEWARE — verifyUser only runs if token exists AND user is already in DB
-const optionalVerifyUser = async (req, res, next) => {
-  const token = req.cookies.access_token || req.header('Authorization')?.replace('Bearer ', '');
+// THIS IS THE CORRECT "remember me" middleware
+const rememberMeLogin = async (req, res, next) => {
+  const token = req.cookies.access_token;
 
-  if (!token) {
-    // No token → first-time login → skip verification
-    return next();
-  }
+  // No token → definitely first-time → go to LDAP
+  if (!token) return next();
 
   try {
-    // Token exists → try to verify (second-time login)
-    await verifyUser(req, res, () => {
-      // If verifyUser succeeds → user is authenticated → skip signin controller
-      if (req.user) {
-        return res.json({
-          success: true,
-          message: "Already logged in",
-          user: req.user
-        });
+    await verifyUser(req, res, async () => {
+      if (!req.user) return next();
+
+      // NEW: Check if username in request body matches the token owner
+      const { username } = req.body || {};
+
+      if (username && req.user.employeeId !== `CBE-${username}` && req.user.employeeId !== username) {
+        // Different person trying to log in but old cookie exists
+        // → Clear cookie and force full LDAP login
+        res.clearCookie("access_token");
+        return next();
       }
-      next(); // verifyUser failed → continue to signin
+
+      // Same person → auto-login from DB (fast!)
+      return res.json({
+        success: true,
+        message: "Welcome back!",
+        user: req.user
+      });
     });
-  } catch {
-    next(); // any error → continue to signin
+  } catch (err) {
+    res.clearCookie("access_token");
+    next();
   }
 };
 
-// FINAL ROUTE — ONE LINE DOES EVERYTHING
-router.post('/signin', optionalVerifyUser, signin);
+// ONE PERFECT ROUTE
+router.post('/signin', rememberMeLogin, signin);
 
 export default router;
