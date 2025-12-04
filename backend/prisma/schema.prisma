@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,98 +7,76 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-enum Role {
-  OFFICER
-  TEAM_LEADER
-  CENTRAL_KYC_MANAGER
-  USER
-}
-
-
-// ────────────────────── USER MODEL ──────────────────────
 model User {
-  id            String   @id @default(uuid())
-  employeeId    String   @unique
-  name          String
-  role          Role
-  phone         String?
-  status        Int      @default(0)  // 0 = Active, 1 = Deleted/Inactive
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  id                 String       @id @default(uuid())
+  employeeId         String       @unique
+  name               String
+  role               Role
+  phone              String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  status             Int          @default(0)
   assignedAsOfficer1 Assignment[] @relation("Officer1Assignments")
   assignedAsOfficer2 Assignment[] @relation("Officer2Assignments")
   assignedAsTL1      Assignment[] @relation("TL1Assignments")
   assignedAsTL2      Assignment[] @relation("TL2Assignments")
-
-  uploadedDocuments Document[]
-  auditLogs         AuditLog[]
+  auditLogs          AuditLog[]
+  uploadedDocuments  Document[]
 
   @@map("users")
-
 }
 
 model Branch {
-  id                   String   @id @default(uuid())
-  name                 String
-  accountOfficerId     String   @unique
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  assignments          Assignment[]
+  id               String       @id @default(uuid())
+  name             String
+  accountOfficerId String       @unique
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  assignments      Assignment[]
 
   @@map("branches")
 }
 
 model Assignment {
-  id                       String    @id @default(uuid())
-  date                     DateTime  @db.Date
-  branchId                 String
+  id                       String     @id @default(uuid())
+  date                     DateTime   @db.Date
   branchName               String
-  accountOfficerEmployeeId String
-
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
   officer1Id               String
-  officer1Shift            String
-  officer1Phone            String?
-
   officer2Id               String
-  officer2Shift            String
-  officer2Phone            String?
-
   tl1Id                    String?
-  tl1Shift                 String?
-  tl1Phone                 String?
-
   tl2Id                    String?
-  tl2Shift                 String?
+  officer1Phone            String?
+  officer2Phone            String?
+  tl1Phone                 String?
   tl2Phone                 String?
-
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-
-  branch                   Branch    @relation(fields: [branchId], references: [id])
-  officer1                 User      @relation("Officer1Assignments", fields: [officer1Id], references: [id])
-  officer2                 User      @relation("Officer2Assignments", fields: [officer2Id], references: [id])
-  tl1                      User?     @relation("TL1Assignments", fields: [tl1Id], references: [id])
-  tl2                      User?     @relation("TL2Assignments", fields: [tl2Id], references: [id])
-
+  officer1Shift            String
+  officer2Shift            String
+  tl1Shift                 String?
+  tl2Shift                 String?
+  branchId                 String
+  accountOfficerEmployeeId String
+  branch                   Branch     @relation(fields: [branchId], references: [id])
+  officer1                 User       @relation("Officer1Assignments", fields: [officer1Id], references: [id])
+  officer2                 User       @relation("Officer2Assignments", fields: [officer2Id], references: [id])
+  tl1                      User?      @relation("TL1Assignments", fields: [tl1Id], references: [id])
+  tl2                      User?      @relation("TL2Assignments", fields: [tl2Id], references: [id])
   documents                Document[]
 
   @@map("assignments")
 }
 
 model Document {
-  id           String    @id @default(uuid())
+  id           String      @id @default(uuid())
   name         String
   filePath     String
   uploadedById String
   assignmentId String?
-
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
   assignment   Assignment? @relation(fields: [assignmentId], references: [id])
+  uploadedBy   User        @relation(fields: [uploadedById], references: [id])
 
   @@map("documents")
 }
@@ -112,9 +88,14 @@ model AuditLog {
   userId    String
   entityId  String?
   createdAt DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
 }
 
+enum Role {
+  OFFICER
+  TEAM_LEADER
+  CENTRAL_KYC_MANAGER
+  USER
+}
