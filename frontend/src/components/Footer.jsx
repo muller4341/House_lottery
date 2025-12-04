@@ -6,8 +6,8 @@ const Footer = () => {
   const currentYear = new Date().getFullYear(); // This will be 2025, 2026, etc. automatically
 
   return (
-    <footer className="bg-white/95 backdrop-blur-2xl border-t border-fuchsia-800/20 mt-auto">
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <footer className="bg-fuchsia-900 backdrop-blur-2xl border-t border-fuchsia-800/20 mt-auto">
+      <div className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4">
 
           {/* Dynamic Copyright with Current Year */}
