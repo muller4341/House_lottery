@@ -9,6 +9,7 @@ import AssignmentPage from './pages/AssignmentPage';
 import AddUserPage from './pages/AddUserPage';
 import AssignmentViewPage from './pages/AssignmentViewPage';
 import BranchManagementPage from './pages/BranchManagementPage';
+import MyAssignmentsPage from './pages/MyAssignmentsPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -33,6 +34,7 @@ function App() {
         <Route path="/add-user" element={<AddUserPage />} />
         <Route path="/daily-assignment" element={<AssignmentPage />} />
         <Route path="/branch-management" element={<BranchManagementPage />} />
+        <Route path="/my-assignments" element={<MyAssignmentsPage />} />
 
         {/* OFFICER PAGE — ProtectedRoute will redirect USER role here */}
         <Route path="/assignment-view" element={<AssignmentViewPage />} />
