@@ -304,6 +304,42 @@ export const getAssignments = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch assignments' });
   }
 };
+// GET /api/assignments/my-assignments?userId=xxx
+export const getMyAssignments = async (req, res) => {
+  try {
+    // GET USER FROM MIDDLEWARE — NOT FROM QUERY
+    const userId = req.user.id;   // ← THIS IS THE KEY
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const assignments = await prisma.assignment.findMany({
+      where: {
+        OR: [
+          { officer1Id: userId },
+          { officer2Id: userId },
+          { tl1Id: userId },
+          { tl2Id: userId }
+        ]
+      },
+      include: {
+        branch: true,
+        officer1: { select: { name: true, phone: true } },
+        officer2: { select: { name: true, phone: true } },
+        tl1: { select: { name: true, phone: true } },
+        tl2: { select: { name: true, phone: true } }
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    console.log("Found assignments for user:", userId, assignments.length);
+    res.json({ assignments });
+  } catch (error) {
+    console.error("Error in getMyAssignments:", error);
+    res.status(500).json({ error: "Failed to fetch assignments" });
+  }
+};
 
 // Bulk (fixed to work with Excel format: lookup by name, not ID)
 export const bulkCreateAssignments = async (req, res) => {

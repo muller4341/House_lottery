@@ -61,12 +61,12 @@ const Navbar = () => {
             </div>
 
             <div className="hidden sm:block leading-tight">
-              <h1 className="text-[10px] font-black bg-gradient-to-r from-fuchsia-600 to-rose-600 bg-clip-text text-transparent">
+              <h1 className="text-[32px] font-black bg-gradient-to-r from-fuchsia-600 to-rose-600 bg-clip-text text-transparent">
                 CBE KYC
               </h1>
-              <p className="text-[10px] font-semibold tracking-wide text-gray-500">
+              <p className="text-[10px] font-semibold tracking-wide text-amber-500">
                 
-                Enterprise Dashboard
+                commercial bank of ethiopia
               </p>
             </div>
           </Link>

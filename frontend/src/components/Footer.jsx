@@ -11,22 +11,22 @@ const Footer = () => {
         <div className="text-center space-y-4">
 
           {/* Dynamic Copyright with Current Year */}
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-amber-500">
             © {currentYear}{' '}
-            <span className="font-bold bg-gradient-to-r from-fuchsia-800 via-rose-700 to-pink-700 bg-clip-text text-transparent">
+            <span className="font-bold text-amber-500 bg-clip-text ">
               Commercial Bank of Ethiopia
             </span>
             . All rights reserved.
           </p>
 
-          <p className="text-xs text-fuchsia-800/70 font-medium tracking-wider">
-            KYC Dashboard • Powered by LDAP Enterprise Authentication
+          <p className="text-xs text-amber-500 font-medium tracking-wider">
+            Powered by CBE CKYC Solutions. 
           </p>
 
-          <div className="flex justify-center items-center gap-4">
-            <div className="h-px bg-gradient-to-r from-transparent via-fuchsia-800/30 to-transparent flex-1"></div>
-            <span className="text-xs text-fuchsia-800/50 font-bold">SECURE • FAST • COMPLIANT</span>
-            <div className="h-px bg-gradient-to-r from-transparent via-fuchsia-800/30 to-transparent flex-1"></div>
+          <div className="flex justify-center items-center gap-4 border-t border-amber-500 pt-4">
+            <div className="h-px text-amber-500 flex-1"></div>
+            <span className="text-xs text-amber-500  font-bold">SECURE • FAST • COMPLIANT</span>
+            <div className="h-px text-amber-500 flex-1"></div>
           </div>
         </div>
       </div>
