@@ -21,11 +21,123 @@ const getShiftLabel = (shift) => {
   return shift === 'I' ? 'Shift I' : 'Shift II';
 };
 
+// export const createAssignment = async (req, res) => {
+//   try {
+//     const {
+//       date,
+//       branchId,
+//       officer1Id,
+//       officer1Shift,
+//       officer1Phone,
+//       officer2Id,
+//       officer2Shift,
+//       officer2Phone,
+//       tl1Id,
+//       tl1Shift,
+//       tl1Phone,
+//       tl2Id,
+//       tl2Shift,
+//       tl2Phone
+//     } = req.body;
+//     const userId = req.user?.id;
+
+//     // Fetch branch to populate
+//     const branch = await prisma.branch.findUnique({ where: { id: branchId } });
+//     if (!branch) return res.status(404).json({ error: 'Branch not found' });
+
+//     // Full validation
+//     if (!date || !branchId || !officer1Id || !officer2Id || !officer1Shift || !officer2Shift || (!tl1Id && !tl2Id)) {
+//       return res.status(400).json({ error: 'Required fields missing: date, branchId, officer1Id, officer1Shift, officer2Id, officer2Shift, at least one TL' });
+//     }
+//     if (officer1Shift !== 'I' && officer1Shift !== 'II') return res.status(400).json({ error: 'Officer 1 shift must be I or II' });
+//     if (officer2Shift !== 'I' && officer2Shift !== 'II') return res.status(400).json({ error: 'Officer 2 shift must be I or II' });
+//     if (tl1Id && (tl1Shift !== 'I' && tl1Shift !== 'II')) return res.status(400).json({ error: 'TL1 shift must be I or II if assigned' });
+//     if (tl2Id && (tl2Shift !== 'I' && tl2Shift !== 'II')) return res.status(400).json({ error: 'TL2 shift must be I or II if assigned' });
+
+//     // Find users (validate exist and active)
+//     const officer1 = await prisma.user.findUnique({ where: { id: officer1Id } });
+//     if (!officer1 || officer1.status !== 0) return res.status(404).json({ error: 'Active Officer 1 not found' });
+//     const officer2 = await prisma.user.findUnique({ where: { id: officer2Id } });
+//     if (!officer2 || officer2.status !== 0) return res.status(404).json({ error: 'Active Officer 2 not found' });
+//     let tl1 = null, tl2 = null;
+//     if (tl1Id) {
+//       tl1 = await prisma.user.findUnique({ where: { id: tl1Id } });
+//       if (!tl1 || tl1.status !== 0) return res.status(404).json({ error: 'Active TL1 not found' });
+//     }
+//     if (tl2Id) {
+//       tl2 = await prisma.user.findUnique({ where: { id: tl2Id } });
+//       if (!tl2 || tl2.status !== 0) return res.status(404).json({ error: 'Active TL2 not found' });
+//     }
+
+//     // Validate same user on different shifts only
+//     if (officer1Id === officer2Id && officer1Shift === officer2Shift) {
+//       return res.status(400).json({ error: 'Same officer cannot be assigned to the same shift twice' });
+//     }
+//     if (tl1Id && tl2Id && tl1Id === tl2Id && tl1Shift === tl2Shift) {
+//       return res.status(400).json({ error: 'Same team leader cannot be assigned to the same shift twice' });
+//     }
+
+//     // Check for duplicate assignment on same date/branch
+//     const existing = await prisma.assignment.findFirst({
+//       where: { date: new Date(date), branchId }
+//     });
+//     if (existing) return res.status(409).json({ error: 'Assignment already exists for this date and branch' });
+
+//     const assignment = await prisma.assignment.create({
+//       data: {
+//         date: new Date(date),
+//         branchId,
+//         branchName: branch.name,
+//         accountOfficerEmployeeId: branch.accountOfficerId,  // Now valid after schema update
+//         officer1Id,
+//         officer1Shift,
+//         officer1Phone: officer1Phone || null,
+//         officer2Id,
+//         officer2Shift,
+//         officer2Phone: officer2Phone || null,
+//         tl1Id: tl1Id || null,
+//         tl1Shift: tl1Shift || null,
+//         tl1Phone: tl1Phone || null,
+//         tl2Id: tl2Id || null,
+//         tl2Shift: tl2Shift || null,
+//         tl2Phone: tl2Phone || null
+//       },
+//       include: {
+//         branch: true,
+//         officer1: { select: { id: true, name: true, phone: true } },
+//         officer2: { select: { id: true, name: true, phone: true } },
+//         tl1: { select: { id: true, name: true, phone: true } },
+//         tl2: { select: { id: true, name: true, phone: true } }
+//       }
+//     });
+
+//     // Audit log
+//     if (userId) {
+//       await prisma.auditLog.create({
+//         data: {
+//           action: 'CREATE_ASSIGNMENT',
+//           details: JSON.stringify({ date, branchId, officer1Id, officer2Id }),
+//           userId,
+//           entityId: assignment.id
+//         }
+//       });
+//     }
+
+//     res.status(201).json(assignment);
+//   } catch (error) {
+//     console.error('Create assignment error:', error);
+//     res.status(500).json({ error: error.message || 'Failed to create assignment' });
+//   }
+// };
+
+// Update (similar fixes)
 export const createAssignment = async (req, res) => {
   try {
-    const {
+    // Extract and fix arrays
+    let { 
       date,
-      branchId,
+      branchIds,
+      accountOfficerEmployeeIds,
       officer1Id,
       officer1Shift,
       officer1Phone,
@@ -39,98 +151,100 @@ export const createAssignment = async (req, res) => {
       tl2Shift,
       tl2Phone
     } = req.body;
-    const userId = req.user?.id;
 
-    // Fetch branch to populate
-    const branch = await prisma.branch.findUnique({ where: { id: branchId } });
-    if (!branch) return res.status(404).json({ error: 'Branch not found' });
-
-    // Full validation
-    if (!date || !branchId || !officer1Id || !officer2Id || !officer1Shift || !officer2Shift || (!tl1Id && !tl2Id)) {
-      return res.status(400).json({ error: 'Required fields missing: date, branchId, officer1Id, officer1Shift, officer2Id, officer2Shift, at least one TL' });
+    // Convert string to array if needed
+    if (typeof branchIds === 'string') {
+      branchIds = branchIds.split(',').map(id => id.trim()).filter(id => id);
     }
-    if (officer1Shift !== 'I' && officer1Shift !== 'II') return res.status(400).json({ error: 'Officer 1 shift must be I or II' });
-    if (officer2Shift !== 'I' && officer2Shift !== 'II') return res.status(400).json({ error: 'Officer 2 shift must be I or II' });
-    if (tl1Id && (tl1Shift !== 'I' && tl1Shift !== 'II')) return res.status(400).json({ error: 'TL1 shift must be I or II if assigned' });
-    if (tl2Id && (tl2Shift !== 'I' && tl2Shift !== 'II')) return res.status(400).json({ error: 'TL2 shift must be I or II if assigned' });
-
-    // Find users (validate exist and active)
-    const officer1 = await prisma.user.findUnique({ where: { id: officer1Id } });
-    if (!officer1 || officer1.status !== 0) return res.status(404).json({ error: 'Active Officer 1 not found' });
-    const officer2 = await prisma.user.findUnique({ where: { id: officer2Id } });
-    if (!officer2 || officer2.status !== 0) return res.status(404).json({ error: 'Active Officer 2 not found' });
-    let tl1 = null, tl2 = null;
-    if (tl1Id) {
-      tl1 = await prisma.user.findUnique({ where: { id: tl1Id } });
-      if (!tl1 || tl1.status !== 0) return res.status(404).json({ error: 'Active TL1 not found' });
-    }
-    if (tl2Id) {
-      tl2 = await prisma.user.findUnique({ where: { id: tl2Id } });
-      if (!tl2 || tl2.status !== 0) return res.status(404).json({ error: 'Active TL2 not found' });
+    if (typeof accountOfficerEmployeeIds === 'string') {
+      accountOfficerEmployeeIds = accountOfficerEmployeeIds.split(',').map(id => id.trim()).filter(id => id);
     }
 
-    // Validate same user on different shifts only
-    if (officer1Id === officer2Id && officer1Shift === officer2Shift) {
-      return res.status(400).json({ error: 'Same officer cannot be assigned to the same shift twice' });
-    }
-    if (tl1Id && tl2Id && tl1Id === tl2Id && tl1Shift === tl2Shift) {
-      return res.status(400).json({ error: 'Same team leader cannot be assigned to the same shift twice' });
+    // Validate ALL required fields
+    if (
+      !date ||
+      !branchIds?.length ||
+      !accountOfficerEmployeeIds?.length ||
+      accountOfficerEmployeeIds.some(id => !/^\d{4}$/.test(id)) ||
+      !officer1Id ||
+      !officer1Shift ||
+      !officer1Phone ||
+      !officer2Id ||
+      !officer2Shift ||
+      !officer2Phone ||
+      !tl1Id ||
+      !tl1Shift ||
+      !tl1Phone ||
+      !tl2Id ||
+      !tl2Shift ||
+      !tl2Phone
+    ) {
+      return res.status(400).json({ 
+        error: 'Missing required fields. Ensure all fields are filled: Date, Branches, AO IDs (4 digits), Officers 1 & 2 (with shifts and phones), Team Leaders 1 & 2 (with shifts and phones).'
+      });
     }
 
-    // Check for duplicate assignment on same date/branch
-    const existing = await prisma.assignment.findFirst({
-      where: { date: new Date(date), branchId }
+    // Fetch branches
+    const branches = await prisma.branch.findMany({
+      where: { id: { in: branchIds } }
     });
-    if (existing) return res.status(409).json({ error: 'Assignment already exists for this date and branch' });
 
+    if (branches.length !== branchIds.length) {
+      return res.status(404).json({ error: 'One or more branches not found' });
+    }
+
+    const branchNames = branches.map(b => b.name);
+
+    // Validate users
+    const officer1 = await prisma.user.findUnique({ where: { id: officer1Id } });
+    if (!officer1 || officer1.status !== 0) return res.status(404).json({ error: 'Officer 1 not found or inactive' });
+
+    const officer2 = await prisma.user.findUnique({ where: { id: officer2Id } });
+    if (!officer2 || officer2.status !== 0) return res.status(404).json({ error: 'Officer 2 not found or inactive' });
+
+    const tl1 = await prisma.user.findUnique({ where: { id: tl1Id } });
+    if (!tl1 || tl1.status !== 0) return res.status(404).json({ error: 'TL1 not found or inactive' });
+
+    const tl2 = await prisma.user.findUnique({ where: { id: tl2Id } });
+    if (!tl2 || tl2.status !== 0) return res.status(404).json({ error: 'TL2 not found or inactive' });
+
+    // Create assignment
     const assignment = await prisma.assignment.create({
       data: {
         date: new Date(date),
-        branchId,
-        branchName: branch.name,
-        accountOfficerEmployeeId: branch.accountOfficerId,  // Now valid after schema update
+        branchId: branchIds[0],
+        branchIds: branchIds.join(','),
+        branchName: branches[0]?.name || '',
+        branchNames: branchNames.join(', '),
+        accountOfficerEmployeeId: accountOfficerEmployeeIds[0],
+        accountOfficerEmployeeIds: accountOfficerEmployeeIds.join(', '),
         officer1Id,
         officer1Shift,
-        officer1Phone: officer1Phone || null,
+        officer1Phone,
         officer2Id,
         officer2Shift,
-        officer2Phone: officer2Phone || null,
-        tl1Id: tl1Id || null,
-        tl1Shift: tl1Shift || null,
-        tl1Phone: tl1Phone || null,
-        tl2Id: tl2Id || null,
-        tl2Shift: tl2Shift || null,
-        tl2Phone: tl2Phone || null
+        officer2Phone,
+        tl1Id,
+        tl1Shift,
+        tl1Phone,
+        tl2Id,
+        tl2Shift,
+        tl2Phone
       },
       include: {
-        branch: true,
-        officer1: { select: { id: true, name: true, phone: true } },
-        officer2: { select: { id: true, name: true, phone: true } },
-        tl1: { select: { id: true, name: true, phone: true } },
-        tl2: { select: { id: true, name: true, phone: true } }
+        officer1: { select: { name: true, phone: true } },
+        officer2: { select: { name: true, phone: true } },
+        tl1: { select: { name: true, phone: true } },
+        tl2: { select: { name: true, phone: true } }
       }
     });
-
-    // Audit log
-    if (userId) {
-      await prisma.auditLog.create({
-        data: {
-          action: 'CREATE_ASSIGNMENT',
-          details: JSON.stringify({ date, branchId, officer1Id, officer2Id }),
-          userId,
-          entityId: assignment.id
-        }
-      });
-    }
 
     res.status(201).json(assignment);
   } catch (error) {
     console.error('Create assignment error:', error);
-    res.status(500).json({ error: error.message || 'Failed to create assignment' });
+    res.status(500).json({ error: 'Failed to create assignment' });
   }
 };
-
-// Update (similar fixes)
 export const updateAssignment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -274,31 +388,97 @@ export const deleteAssignment = async (req, res) => {
   }
 };
 
+// export const getAssignments = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10 } = req.query;
+//     const skip = (page - 1) * limit;
+//     const assignments = await prisma.assignment.findMany({
+//       skip,
+//       take: parseInt(limit),
+//       orderBy: { date: 'desc' },
+//       include: {
+//         branch: { select: { name: true } },
+//         officer1: { select: { name: true } },
+//         officer2: { select: { name: true } },
+//         tl1: { select: { name: true } },
+//         tl2: { select: { name: true } }
+//       }
+//     });
+//     const total = await prisma.assignment.count();
+
+//     // Enrich with branchName if branch null (fallback)
+//     const enrichedAssignments = assignments.map(a => ({
+//       ...a,
+//       branchName: a.branch?.name || a.branchName
+//     }));
+
+//     res.json({ assignments: enrichedAssignments, total, page: parseInt(page), limit: parseInt(limit) });
+//   } catch (error) {
+//     console.error('Get assignments error:', error);
+//     res.status(500).json({ error: 'Failed to fetch assignments' });
+//   }
+// };
+
 export const getAssignments = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, date } = req.query;
     const skip = (page - 1) * limit;
+
+    // BUILD WHERE FILTER — THIS IS THE FIX
+    const where = {};
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      where.date = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+    }
+
     const assignments = await prisma.assignment.findMany({
-      skip,
+      where,
+      skip: parseInt(skip),
       take: parseInt(limit),
       orderBy: { date: 'desc' },
       include: {
-        branch: { select: { name: true } },
-        officer1: { select: { name: true } },
-        officer2: { select: { name: true } },
-        tl1: { select: { name: true } },
-        tl2: { select: { name: true } }
+        branch: { 
+          select: { name: true, accountOfficerId: true } 
+        },
+        officer1: { select: { name: true, phone: true } },
+        officer2: { select: { name: true, phone: true } },
+        tl1: { select: { name: true, phone: true } },
+        tl2: { select: { name: true, phone: true } }
       }
     });
-    const total = await prisma.assignment.count();
 
-    // Enrich with branchName if branch null (fallback)
+    const total = await prisma.assignment.count({ where });
+
+    // Your enrichment code (perfect as is)
     const enrichedAssignments = assignments.map(a => ({
       ...a,
-      branchName: a.branch?.name || a.branchName
+      branchIds: a.branchIds ? a.branchIds.split(',').map(id => id.trim()) : [],
+      branchNames: a.branchNames || a.branch?.name || '—',
+      accountOfficerEmployeeIds: a.accountOfficerEmployeeIds 
+        ? a.accountOfficerEmployeeIds.split(',').map(id => id.trim()) 
+        : (a.branch?.accountOfficerId ? [a.branch.accountOfficerId] : []),
+      branchName: a.branchNames?.split(', ')[0]?.trim() || a.branch?.name || '—',
+      accountOfficerEmployeeId: a.accountOfficerEmployeeIds?.split(', ')[0]?.trim() || a.branch?.accountOfficerId || '—',
+      officer1Phone: a.officer1Phone || a.officer1?.phone || '—',
+      officer2Phone: a.officer2Phone || a.officer2?.phone || '—',
+      tl1Phone: a.tl1Phone || a.tl1?.phone || '—',
+      tl2Phone: a.tl2Phone || a.tl2?.phone || '—'
     }));
 
-    res.json({ assignments: enrichedAssignments, total, page: parseInt(page), limit: parseInt(limit) });
+    res.json({
+      assignments: enrichedAssignments,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
   } catch (error) {
     console.error('Get assignments error:', error);
     res.status(500).json({ error: 'Failed to fetch assignments' });

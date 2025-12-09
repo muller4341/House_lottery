@@ -10,6 +10,7 @@ import AddUserPage from './pages/AddUserPage';
 import AssignmentViewPage from './pages/AssignmentViewPage';
 import BranchManagementPage from './pages/BranchManagementPage';
 import MyAssignmentsPage from './pages/MyAssignmentsPage';
+import CurrentAssignmentsPage from './pages/CurrentAssignmentsPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -22,6 +23,8 @@ function App() {
 
       {/* DEFAULT ROUTE = SIGNIN */}
       <Route path="/" element={<Signin />} />
+      
+       <Route path="/current-assignments" element={< CurrentAssignmentsPage/>} />
 
       {/* PUBLIC ROUTE */}
       <Route path="/signin" element={<Signin />} />

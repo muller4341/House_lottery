@@ -37,36 +37,43 @@ model Branch {
   @@map("branches")
 }
 
+
+
 model Assignment {
-  id                       String     @id @default(uuid())
-  date                     DateTime   @db.Date
-  branchName               String
-  createdAt                DateTime   @default(now())
-  updatedAt                DateTime   @updatedAt
-  officer1Id               String
-  officer2Id               String
-  tl1Id                    String?
-  tl2Id                    String?
-  officer1Phone            String?
-  officer2Phone            String?
-  tl1Phone                 String?
-  tl2Phone                 String?
-  officer1Shift            String
-  officer2Shift            String
-  tl1Shift                 String?
-  tl2Shift                 String?
-  branchId                 String
-  accountOfficerEmployeeId String
-  branch                   Branch     @relation(fields: [branchId], references: [id])
-  officer1                 User       @relation("Officer1Assignments", fields: [officer1Id], references: [id])
-  officer2                 User       @relation("Officer2Assignments", fields: [officer2Id], references: [id])
-  tl1                      User?      @relation("TL1Assignments", fields: [tl1Id], references: [id])
-  tl2                      User?      @relation("TL2Assignments", fields: [tl2Id], references: [id])
-  documents                Document[]
+  id                        String    @id @default(uuid())
+  date                      DateTime  @db.Date    // ← THIS IS THE WORK DATE (from your <input type="date">)
+  branchId                  String
+  branchIds                 String                  // "uuid1,uuid2,uuid3"
+  branchName               String                  // "Addis, Adama"
+  branchNames               String                  // "Addis Ababa, Adama, Mekelle"
+  accountOfficerEmployeeId  String                  // first one
+  accountOfficerEmployeeIds String                  // "1234,5678,9012"
+
+  officer1Id     String
+  officer2Id     String
+  tl1Id          String
+  tl2Id          String
+  officer1Phone  String
+  officer2Phone  String
+  tl1Phone       String
+  tl2Phone       String
+  officer1Shift  String
+  officer2Shift  String
+  tl1Shift       String
+  tl2Shift       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branch   Branch @relation(fields: [branchId], references: [id])
+  officer1 User   @relation("Officer1Assignments", fields: [officer1Id], references: [id])
+  officer2 User   @relation("Officer2Assignments", fields: [officer2Id], references: [id])
+  tl1      User  @relation("TL1Assignments", fields: [tl1Id], references: [id])
+  tl2      User  @relation("TL2Assignments", fields: [tl2Id], references: [id])
+  documents Document[]
 
   @@map("assignments")
 }
-
 model Document {
   id           String      @id @default(uuid())
   name         String
