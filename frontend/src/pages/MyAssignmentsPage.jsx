@@ -295,11 +295,17 @@ const MyAssignmentsPage = () => {
        
 
         {/* Filter Tabs */}
-        <div className="flex flex-wrap justify-center gap-3 mb-8 mt-6">
+        <div className="flex md:flex-row md:gap-64 mb-8 mt-6 flex-col gap-6 ">
+          <div className="px-6 py-5 border-b border-gray-200 ">
+            <h2 className="text-2xl lg:text-3xl font-black text-fuchsia-800">
+              My Assignments
+            </h2>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 ">
           {[
             { key: 'today', label: 'Today', icon: CalendarIcon, color: 'emerald' },
             { key: 'week', label: 'This Week', icon: ClockIcon, color: 'blue' },
-            { key: 'month', label: 'This Month', icon: CalendarDaysIcon, color: 'purple' },
+            { key: 'month', label: 'This Month', icon: CalendarDaysIcon, color: 'violet' },
             { key: 'all', label: 'All Time', icon: ArchiveBoxIcon, color: 'rose' },
           ].map(({ key, label, icon: Icon, color }) => {
             const count = groupedList.filter(a => {
@@ -313,43 +319,44 @@ const MyAssignmentsPage = () => {
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm lg:text-base transition-all shadow-md
-                  ${filter === key 
-                    ? `bg-gradient-to-r from-${color}-600 to-${color}-700 text-white shadow-lg` 
-                    : 'bg-white/90 text-gray-700 hover:bg-white'
-                  }`}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm lg:text-base transition-all shadow-md focus:outline-none focus:ring-0
+  ${filter === key 
+    ? `bg-gradient-to-r from-${color}-600 to-${color}-700 text-white shadow-lg` 
+    : 'bg-white/90 text-gray-700 hover:bg-white hover:text-gray-900'
+  }`}
               >
                 <Icon className="h-5 w-5" />
                 {label} ({count})
               </button>
             );
           })}
+          </div>
         </div>
 
         {/* Single Clean Table */}
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200 overflow-hidden  md:mx-8 lg:mx-12 xl:mx-16">
           {filteredAssignments.length === 0 ? (
             <div className="text-center py-20 text-gray-500">
               <ArchiveBoxIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <p className="text-xl">No assignments found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
               <table className="w-full text-xs lg:text-sm">
                 <thead className="bg-gradient-to-r from-fuchsia-100 to-rose-100">
                   <tr>
-                    <th className="px-4 py-4 text-left font-bold text-fuchsia-900">Date</th>
-                    <th className="px-4 py-4 text-left font-bold text-fuchsia-900">Branches</th>
-                    <th className="px-4 py-4 text-left font-bold text-fuchsia-900">AO IDs</th>
-                    <th className="px-4 py-4 text-left font-bold text-fuchsia-900">Your Role</th>
-                    <th className="px-4 py-4 text-left font-bold text-fuchsia-900">Shift</th>
+                    <th className="px-6 py-4 text-left font-bold text-fuchsia-900">Date</th>
+                    <th className="px-6 py-4 text-left font-bold text-fuchsia-900">Branches</th>
+                    <th className="px-6 py-4 text-left font-bold text-fuchsia-900">AO IDs</th>
+                    <th className="px-6 py-4 text-left font-bold text-fuchsia-900">Your Role</th>
+                    <th className="px-6 py-4 text-left font-bold text-fuchsia-900">Shift</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredAssignments.map((a, i) => (
                     <tr key={i} className="hover:bg-fuchsia-50/50 transition-colors">
-                      <td className="px-4 py-4 font-medium text-gray-800">{formatDate(a.date)}</td>
-                      <td className="px-4 py-4">
+                      <td className="px-6 py-4 font-medium text-gray-800">{formatDate(a.date)}</td>
+                      <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           {a.branches.map((b, idx) => (
                             <span key={idx} className="px-3 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
@@ -358,22 +365,22 @@ const MyAssignmentsPage = () => {
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           {a.aoIds.map((id, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
+                            <span key={idx} className="px-6 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
                               {id}
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold 
                           ${a.role.includes('Officer') ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'}`}>
                           {a.role}
                         </span>
                       </td>
-                      <td className="px-4 py-4 font-bold text-gray-700">{getShiftLabel(a.shift)}</td>
+                      <td className="px-6 py-4 font-bold text-gray-700">{getShiftLabel(a.shift)}</td>
                     </tr>
                   ))}
                 </tbody>
