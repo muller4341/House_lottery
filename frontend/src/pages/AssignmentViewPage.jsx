@@ -60,12 +60,38 @@ const AssignmentViewPage = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = assignments.filter(a => 
-      !filterId || (a.accountOfficer?.employeeId || a.accountOfficerEmployeeId || '').includes(filterId)
-    );
-    setFilteredAssignments(filtered);
-  }, [filterId, assignments]);
+  if (!filterId) {
+    setFilteredAssignments(assignments);
+    return;
+  }
 
+  const searchTerm = filterId.toLowerCase();
+
+  const filtered = assignments.filter(assignment => {
+    // 1. Get all AO IDs — handle array OR string
+    let aoIds = [];
+
+    if (Array.isArray(assignment.accountOfficerEmployeeIds)) {
+      aoIds = assignment.accountOfficerEmployeeIds.map(id => id.trim().toLowerCase());
+    } else if (typeof assignment.accountOfficerEmployeeIds === 'string') {
+      aoIds = assignment.accountOfficerEmployeeIds
+        .split(',')
+        .map(id => id.trim().toLowerCase())
+        .filter(Boolean);
+    }
+
+    // 2. Also check old single field (for safety)
+    const singleAoId = assignment.accountOfficerEmployeeId || assignment.accountOfficer?.employeeId || '';
+    if (singleAoId.toLowerCase().includes(searchTerm)) {
+      return true;
+    }
+
+    // 3. Search in all AO IDs
+    return aoIds.some(id => id.includes(searchTerm));
+  });
+
+  setFilteredAssignments(filtered);
+}, [filterId, assignments]);
   // CLIENT-SIDE EXCEL EXPORT (NO BACKEND CALL → NO 500 ERROR)
   const handleExport = () => {
     if (filteredAssignments.length === 0) {
@@ -230,8 +256,38 @@ const AssignmentViewPage = () => {
                     <tbody className="bg-white divide-y divide-fuchsia-100">
                       {filteredAssignments.map((assignment, idx) => (
                         <tr key={assignment.id} className={`hover:bg-fuchsia-50/70 transition-all duration-300 ${idx % 2 === 0 ? 'bg-gray-50/30' : ''}`}>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{assignment.branchName}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-fuchsia-700">{assignment.accountOfficer?.employeeId || assignment.accountOfficerEmployeeId || '-'}</td>
+                         <td className="px-4 py-4 text-sm font-semibold text-gray-900">
+  <div className="flex flex-col gap-1">
+    {Array.isArray(assignment.branchNames)
+      ? assignment.branchNames.map((name, i) => (
+          <span key={i} className="px-3 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
+            {name.trim()}
+          </span>
+        ))
+      : assignment.branchNames?.split(',').map((name, i) => (
+          <span key={i} className="px-3 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
+            {name.trim()}
+          </span>
+        )) || <span className="text-gray-500">—</span>
+    }
+  </div>
+</td>
+                         <td className="px-4 py-4 text-sm font-bold text-fuchsia-700">
+  <div className="flex flex-col gap-1">
+    {Array.isArray(assignment.accountOfficerEmployeeIds)
+      ? assignment.accountOfficerEmployeeIds.map((id, i) => (
+          <span key={i} className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
+            {id.trim()}
+          </span>
+        ))
+      : assignment.accountOfficerEmployeeIds?.split(',').map((id, i) => (
+          <span key={i} className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
+            {id.trim()}
+          </span>
+        )) || <span className="text-gray-500">—</span>
+    }
+  </div>
+</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-800">{assignment.officer1?.name || '-'}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{assignment.officer1Phone || assignment.officer1?.phone || '-'}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-emerald-700">{getShiftLabel(assignment.officer1Shift)}</td>

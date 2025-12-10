@@ -289,28 +289,16 @@ const AddUserPage = () => {
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <header className="bg-white/95 backdrop-blur-2xl border-b border-fuchsia-800/20 shadow-sm z-20 w-full flex-shrink-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4 lg:py-6">
-              <button onClick={handleBack} className="flex items-center space-x-2 text-fuchsia-800 hover:text-fuchsia-600 font-semibold transition-all duration-300 hover:scale-105">
-                <ArrowLeftIcon className="h-5 w-5" />
-                <span>Back to Dashboard</span>
-              </button>
-              <div className="flex items-center space-x-3 lg:space-x-4">
-                <div className="text-right hidden sm:block">
-                  <p className="font-semibold text-gray-900 text-sm lg:text-base">{user.displayName}</p>
-                  <p className="text-xs lg:text-sm text-gray-500">{user.title}</p>
-                </div>
-                <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-fuchsia-800 to-rose-700 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/50">
-                  <span className="text-white font-bold text-xs sm:text-sm lg:text-base">
-                    {user.displayName.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
+         <header className="bg-white/95 backdrop-blur-2xl border-b border-fuchsia-800/20 shadow-sm z-20 w-full flex-shrink-0">
+                  <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 flex justify-start">
+                    <div className="flex justify-start py-4 lg:py-6 ">
+                      <button onClick={handleBack} className="flex items-center space-x-2 text-fuchsia-800 hover:text-fuchsia-600 font-semibold transition-all duration-300 hover:scale-105">
+                        <ArrowLeftIcon className="h-5 w-5" />
+                        <span>Back to Dashboard</span>
+                      </button>
+                    </div>
+                  </div>
+                </header>
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 lg:py-6 overflow-hidden min-h-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">
             {/* Add User Form */}

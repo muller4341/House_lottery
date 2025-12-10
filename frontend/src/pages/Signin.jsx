@@ -59,7 +59,7 @@ const Signin = () => {
   }
 };
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-fuchsia-900 overflow-hidden">
+    <div className="h-screen w-screen flex items-center justify-center bg-fuchsia-800 overflow-hidden">
       {/* Animated Background Particles - FUCHSIA-800 Edition */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-fuchsia-800/25 to-pink-600/25 rounded-full blur-3xl animate-blob"></div>
@@ -67,51 +67,74 @@ const Signin = () => {
         <div className="absolute top-40 left-40 w-72 h-72 bg-gradient-to-br from-pink-800/20 to-fuchsia-800/20 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 lg:py-0 relative z-10">
-        {/* Left Side - Logo & Branding */}
-        <div className="w-full lg:w-1/2 xl:w-2/5 h-auto lg:h-full flex flex-col items-center justify-center text-center px-4 lg:px-8 xl:px-12 py-8 lg:py-12 xl:py-16">
-          {/* CBE Logo - FUCHSIA-800 */}
-          <div className="mx-auto w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 2xl:w-44 2xl:h-44 bg-gradient-to-r from-fuchsia-800 via-rose-700 to-pink-700 rounded-full flex items-center justify-center shadow-2xl shadow-fuchsia-800/50 ring-2 ring-fuchsia-800/40">
-            <svg className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 xl:w-20 xl:h-20 2xl:w-22 2xl:h-22 text-white drop-shadow-2xl" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          
-          {/* Title - FUCHSIA-800 Gradient */}
-          <h1 className="
-          font-bold
-          mt-6 sm:mt-8 md:mt-10 lg:mt-12 xl:mt-14 2xl:mt-16 text-3xl sm:text-4xl md:text-3xl lg:text-4xl xl:text-7xl 2xl:text-5xl font-black bg-gradient-to-r from-fuchsia-800 via-rose-700 to-pink-700 bg-clip-text text-transparent leading-tight">
-            CBE KYC
-          </h1>
-          
-          <div className="flex items-center justify-center mt-8  flex flex-col md:flex-row ">
+      <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center  lg:py-0 relative z-10">
+        {/* Left Side - Full Background Image */}
+        
+{/* Left Side - Background Image + CBE Branding Overlay */}
+<div className=" w-full lg:w-1/2 h-full relative overflow-hidden">
+  {/* Background Image */}
   <img 
-    src="/cbe.png" 
-    alt="Commercial Bank of Ethiopia" 
-    className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32 2xl:w-36 2xl:h-36 object-contain drop-shadow-2xl animate-pulse"
+    src="/home.png" 
+    alt="CBE KYC Welcome" 
+    className="absolute inset-0 w-full h-full object-cover"
   />
-  <h1 className="text-2xl sm:text-3xl lg:text-2xl xl:text-5xl 2xl:text-3xl text-amber-700 font-black tracking-wider leading-tight">
-    Commercial Bank of Ethiopia
-  </h1>
+
+  {/* Dark overlay for readability */}
+  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
+
+  {/* CBE Branding - Centered & Beautiful */}
+  <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-8">
+    
+    {/* CBE Logo */}
+    <div className="mb-8 w-28 h-28 lg:w-36 lg:h-36 bg-gradient-to-r from-fuchsia-800 via-rose-700 to-pink-700 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+      <svg className="w-14 h-14 lg:w-20 lg:h-20 text-white drop-shadow-2xl" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+    </div>
+
+    {/* Title */}
+    <h1 className="text-5xl lg:text-6xl xl:text-7xl font-black mb-4 drop-shadow-2xl">
+      CBE KYC
+    </h1>
+
+    {/* Bank Name */}
+    <div className="text-center mb-6 flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+      <img 
+  src="/cbe.png" 
+  alt="Commercial Bank of Ethiopia" 
+  className="w-24 h-24 lg:w-32 lg:h-32 mx-auto mb-6 object-contain drop-shadow-2xl 
+             animate-pulse-slow"
+/>
+      <h2 className="text-2xl lg:text-3xl xl:text-4xl font-black text-amber-400 drop-shadow-2xl">
+        Commercial Bank of Ethiopia
+      </h2>
+    </div>
+
+    {/* Tagline */}
+    <p className="text-lg lg:text-xl xl:text-2xl font-medium italic opacity-90 drop-shadow-xl">
+      Secure • Fast • Enterprise Authentication
+    </p>
+  </div>
 </div>
-          {/* Tagline */}
-          <p className="mt-4 sm:mt-6 md:mt-8 lg:mt-10 max-w-2xl mx-auto text-xs sm:text-sm md:text-base lg:text-lg text-amber-700 font-medium italic">
-            Secure • Fast • Enterprise Authentication
-          </p>
-          
-         
-        </div>
 
         {/* Right Side - Login Form */}
-        <div className="w-full lg:w-1/2 xl:w-3/5 h-auto lg:h-full flex items-center justify-center px-6 lg:px-8 xl:px-12 py-8 lg:py-24 xl:py-24">
-          <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
+        <div className="w-full lg:w-1/2 h-auto lg:h-full flex items-center justify-center px-6 lg:px-8 xl:px-12 py-8 lg:py-24 xl:py-24 bg-fuchsia-800 lg:bg-transparent">
+          <div className="w-full max-w-sm lg:max-w-md flex flex-col items-center">
+    
+    {/* TITLE - CENTERED */}
+    <div className="text-center mb-10">
+      <h1 className="text-2xl lg:text-3xl  font-black leading-tight">
+        <span className="text-white">Daily Assigned CKYC</span>
+        <br />
+        <span className="text-white">Authorizer List</span>
+      </h1>
+      
+    </div>
             
 
          {/* Login Form Card – FINAL & FLAWLESS */}
-<div className="bg-white/95 backdrop-blur-2xl shadow-2xl rounded-3xl border border-fuchsia-800/20 shadow-fuchsia-800/10 
-                p-16 lg:p-24 xl:p-32 2xl:p-40
-                min-h-[680px] lg:min-h-[720px] xl:min-h-[780px] 2xl:min-h-[820px]
-                flex flex-col justify-center relative">
+<div className="bg-white/95 backdrop-blur-2xl shadow-2xl rounded-2xl border border-fuchsia-800/20 shadow-fuchsia-800/10 
+                    p-8 lg:p-12 w-full flex flex-col justify-center relative">
 
   {/* Success Overlay */}
   {success && (
@@ -139,7 +162,7 @@ const Signin = () => {
     {/* Username Field */}
     <div>
       <label htmlFor="username" className="block text-xl lg:text-2xl xl:text-3xl font-bold text-gray-800 mb-6">
-        <span className="inline-flex items-center px-6 py-3 rounded-full text-base lg:text-lg font-bold bg-gradient-to-r from-fuchsia-800/10 to-rose-700/10 text-fuchsia-800 border border-fuchsia-800/20 shadow-md">
+        <span className="inline-flex items-center px-6 py-3  text-base lg:text-lg font-bold text-fuchsia-800 ">
           CBE Username
         </span>
       </label>
@@ -155,9 +178,9 @@ const Signin = () => {
           name="username"
           value={formData.username}
           onChange={handleChange}
-          className="w-full pl-20 pr-6 py-6 sm:py-5 lg:py-8 xl:py-9 text-lg sm:text-base lg:text-xl xl:text-2xl 
-                     border-2 border-fuchsia-800/20 bg-gradient-to-r from-fuchsia-800/5 via-white/95 to-rose-700/5 
-                     focus:outline-none rounded-3xl focus:ring-4 focus:ring-fuchsia-800/40 focus:border-fuchsia-800 
+          className="w-full pl-20 pr-6 py-6 sm:py-2 lg:py-7 text-lg sm:text-base lg:text-xl xl:text-2xl 
+                     border border-fuchsia-800/20 bg-gradient-to-r from-fuchsia-800/5 via-white/95 to-rose-700/5 
+                     focus:outline-none rounded-2xl focus:ring-0 focus:ring-fuchsia-800/40 focus:border-fuchsia-800 
                      transition-all duration-300 shadow-xl hover:shadow-2xl hover:border-fuchsia-800/60 
                      font-medium"
           placeholder={formData.submitted && !formData.username ? "This field is required" : "Enter your CBE username"}
@@ -176,7 +199,7 @@ const Signin = () => {
     {/* Password Field */}
     <div>
       <label htmlFor="password" className="block text-xl lg:text-2xl xl:text-3xl font-bold text-gray-800 mb-6">
-        <span className="inline-flex items-center px-8 py-3 rounded-full text-base lg:text-lg font-bold bg-gradient-to-r from-rose-700/10 to-pink-700/10 text-rose-800 border border-rose-700/20 shadow-md">
+        <span className="inline-flex items-center px-8 py-3  text-base lg:text-lg font-bold text-rose-800 ">
           Password
         </span>
       </label>
@@ -192,9 +215,9 @@ const Signin = () => {
           name="password"
           value={formData.password}
           onChange={handleChange}
-          className="w-full pl-20 pr-20 py-6 sm:py-5 lg:py-8 xl:py-9 text-lg sm:text-base lg:text-xl xl:text-2xl 
-                     border-2 border-fuchsia-800/20 bg-gradient-to-r from-rose-700/5 via-white/95 to-fuchsia-800/5 
-                     focus:outline-none rounded-3xl focus:ring-4 focus:ring-rose-800/40 focus:border-rose-800 
+          className="w-full pl-20 pr-20 py-6 sm:py-2 lg:py-7  text-lg sm:text-base lg:text-xl xl:text-2xl 
+                     border border-fuchsia-800/20 bg-gradient-to-r from-rose-700/5 via-white/95 to-fuchsia-800/5 
+                     focus:outline-none rounded-2xl focus:ring-0 focus:ring-rose-800/40 focus:border-rose-800 
                      transition-all duration-300 shadow-xl hover:shadow-2xl hover:border-rose-800/60 
                      font-medium 
                     appearance-none
@@ -273,7 +296,21 @@ const Signin = () => {
   .animation-delay-4000 {
     animation-delay: 4s;
   }
-`}</style>
+@keyframes pulse-slow {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 6s ease-in-out infinite;
+}
+`
+
+}</style>
 
     </div>
   );

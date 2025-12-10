@@ -68,9 +68,13 @@ const CurrentAssignmentsPage = () => {
   };
 
   const openEditModal = (assignment) => {
-    setEditingAssignment(assignment);
-    setShowEditModal(true);
-  };
+  // Just go back to the main assignment page with the assignment data
+  navigate('/daily-assignment', { 
+    state: { 
+      editAssignment: assignment 
+    } 
+  });
+};
 
   const handleDeleteAssignment = async (id) => {
     if (!confirm('Are you sure you want to delete this assignment?')) return;
@@ -87,6 +91,7 @@ const CurrentAssignmentsPage = () => {
   if (loading) {
     return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>;
   }
+  
   const renderEditModal = () => showEditModal && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -101,112 +106,169 @@ const CurrentAssignmentsPage = () => {
       </div>
     );
 const renderViewModal = () => showViewModal && viewingAssignment && (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Assignment Details</h3>
-          <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700">
-            <XMarkIcon className="h-6 w-6" />
-          </button>
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-bold text-gray-900">Assignment Details</h3>
+        <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700">
+          <XMarkIcon className="h-7 w-7" />
+        </button>
+      </div>
+
+      <div className="space-y-8">
+        {/* DATE & ID */}
+        <div className="text-center">
+          <h3 className="text-3xl font-black text-fuchsia-800 mb-2">
+            {formatDate(viewingAssignment.date)}
+          </h3>
+          <p className="text-lg text-gray-600">ID: {viewingAssignment.id.slice(0, 8)}...</p>
         </div>
-        <div className="space-y-6">
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-black text-fuchsia-800 mb-2">{formatDate(viewingAssignment.date)}</h3>
-            <p className="text-lg text-gray-600">Assignment ID: {viewingAssignment.id.slice(0, 8)}...</p>
+
+        {/* BRANCHES & AO IDs — NOW SHOWING ALL */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 rounded-2xl p-6 border-2 border-fuchsia-200">
+            <h4 className="text-lg font-bold text-fuchsia-800 mb-4">Branches Assigned</h4>
+            <div className="flex flex-wrap gap-2">
+              {Array.isArray(viewingAssignment.branchNames)
+                ? viewingAssignment.branchNames.map((name, i) => (
+                    <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-semibold">
+                      {name.trim()}
+                    </span>
+                  ))
+                : viewingAssignment.branchNames?.split(',').map((name, i) => (
+                    <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-semibold">
+                      {name.trim()}
+                    </span>
+                  )) || <span className="text-gray-500">—</span>
+              }
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 font-semibold">Branch</p>
-              <p className="text-xl font-bold text-fuchsia-800">{viewingAssignment.branchName}</p>
+          <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl p-6 border-2 border-rose-200">
+            <h4 className="text-lg font-bold text-rose-800 mb-4">Account Officer IDs</h4>
+            <div className="flex flex-wrap gap-2">
+              {Array.isArray(viewingAssignment.accountOfficerEmployeeIds)
+                ? viewingAssignment.accountOfficerEmployeeIds.map((id, i) => (
+                    <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-semibold">
+                      {id.trim()}
+                    </span>
+                  ))
+                : viewingAssignment.accountOfficerEmployeeIds?.split(',').map((id, i) => (
+                    <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-semibold">
+                      {id.trim()}
+                    </span>
+                  )) || <span className="text-gray-500">—</span>
+              }
             </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 font-semibold">AO ID</p>
-              <p className="text-xl font-bold text-fuchsia-800">{viewingAssignment.accountOfficerEmployeeId}</p>
+          </div>
+        </div>
+
+        {/* OFFICERS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-6 border-2 border-emerald-200">
+            <h4 className="text-xl font-black text-emerald-800 mb-4">Officer 1</h4>
+            <div className="space-y-3 text-lg">
+              <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer1?.name || '-'}</p>
+              <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer1Phone || viewingAssignment.officer1?.phone || '-'}</p>
+              <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer1Shift)}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-6 border-2 border-emerald-200">
-              <h4 className="text-xl font-black text-emerald-800 mb-4">Officer 1</h4>
+          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-3xl p-6 border-2 border-teal-200">
+            <h4 className="text-xl font-black text-teal-800 mb-4">Officer 2</h4>
+            <div className="space-y-3 text-lg">
+              <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer2?.name || '-'}</p>
+              <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer2Phone || viewingAssignment.officer2?.phone || '-'}</p>
+              <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer2Shift)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* TEAM LEADERS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {viewingAssignment.tl1Id && (
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-6 border-2 border-purple-200">
+              <h4 className="text-xl font-black text-purple-800 mb-4">Team Leader 1</h4>
               <div className="space-y-3 text-lg">
-                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer1?.name || '-'}</p>
-                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer1Phone || viewingAssignment.officer1?.phone || '-'}</p>
-                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer1Shift)}</p>
+                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl1?.name || '-'}</p>
+                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl1Phone || viewingAssignment.tl1?.phone || '-'}</p>
+                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl1Shift)}</p>
               </div>
             </div>
+          )}
 
-            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-3xl p-6 border-2 border-teal-200">
-              <h4 className="text-xl font-black text-teal-800 mb-4">Officer 2</h4>
+          {viewingAssignment.tl2Id && (
+            <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-6 border-2 border-pink-200">
+              <h4 className="text-xl font-black text-pink-800 mb-4">Team Leader 2</h4>
               <div className="space-y-3 text-lg">
-                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer2?.name || '-'}</p>
-                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer2Phone || viewingAssignment.officer2?.phone || '-'}</p>
-                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer2Shift)}</p>
+                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl2?.name || '-'}</p>
+                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl2Phone || viewingAssignment.tl2?.phone || '-'}</p>
+                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl2Shift)}</p>
               </div>
             </div>
-
-            {viewingAssignment.tl1Id && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-6 border-2 border-purple-200">
-                <h4 className="text-xl font-black text-purple-800 mb-4">Team Leader 1</h4>
-                <div className="space-y-3 text-lg">
-                  <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl1?.name || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl1Phone || viewingAssignment.tl1?.phone || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl1Shift)}</p>
-                </div>
-              </div>
-            )}
-
-            {viewingAssignment.tl2Id && (
-              <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-6 border-2 border-pink-200">
-                <h4 className="text-xl font-black text-pink-800 mb-4">Team Leader 2</h4>
-                <div className="space-y-3 text-lg">
-                  <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl2?.name || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl2Phone || viewingAssignment.tl2?.phone || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl2Shift)}</p>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-pink-50/90 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 flex items-center gap-2 text-fuchsia-800 hover:text-fuchsia-600 font-semibold"
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-          Back
-        </button>
-
+    <div className="min-h-screen bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-pink-50/90 flex flex-col">
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-fuchsia-800/15 to-pink-600/15 rounded-full blur-3xl animate-blob"></div>
+  <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-rose-800/15 via-pink-700/15 to-fuchsia-800/15 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+  <div className="absolute top-40 left-40 w-72 h-72 bg-gradient-to-br from-pink-800/10 to-fuchsia-800/10 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
+</div>
+      <div className="relative z-10 flex-1 flex flex-col min-h-0">
+       <header className="bg-white/95 backdrop-blur-2xl border-b border-fuchsia-800/20 shadow-sm z-20 w-full flex-shrink-0">
+                 <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 flex justify-start">
+                   
+         <div className="flex justify-start py-4 lg:py-6">
+           {user?.role !== 'USER' && (
+           <button 
+             onClick={handleBack} 
+             className="flex items-center space-x-2 text-fuchsia-800 hover:text-fuchsia-600 font-semibold transition-all duration-300 hover:scale-105"
+           >
+             <ArrowLeftIcon className="h-5 w-5" />
+             <span>Back to Dashboard</span>
+           </button>
+           )}
+         </div>
+       
+                 </div>
+               </header>
+        <div className="flex flex-col md:flex-row gap-48 mx-16 mt-8 mb-4">
         <h1 className="text-4xl font-black text-fuchsia-800 mb-8 text-center">Current Assignments</h1>
-
-        <div className="flex gap-4 mb-6 justify-center">
+         <div className="flex gap-4 mb-6 justify-center">
           <button
             onClick={() => handleExport('excel')}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg"
+            className="px-6 py-3 bg-green-600 text-green-600 rounded-xl font-bold flex items-center gap-2 shadow-lg"
           >
             <ArrowDownTrayIcon className="h-5 w-5" />
             Export Excel
           </button>
           <button
             onClick={() => handleExport('csv')}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg"
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-blue-700 rounded-xl font-bold flex items-center gap-2 shadow-lg"
           >
             <ArrowDownTrayIcon className="h-5 w-5" />
             Export CSV
           </button>
         </div>
+        </div>
+
+       
 
         {assignments.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg">No assignments found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mx-16">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-fuchsia-200 text-xs">
                 <thead className="bg-fuchsia-100">

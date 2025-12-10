@@ -220,29 +220,46 @@ const MyAssignmentsPage = () => {
 
   // Group assignments by date + shift + role
   const groupedAssignments = assignments
-    .filter(a => [a.officer1Id, a.officer2Id, a.tl1Id, a.tl2Id].includes(user?.id))
-    .reduce((acc, a) => {
-      const date = toDateOnly(a.date);
-      const { role, shift } = (() => {
-        if (a.officer1Id === user.id) return { role: 'Officer 1', shift: a.officer1Shift };
-        if (a.officer2Id === user.id) return { role: 'Officer 2', shift: a.officer2Shift };
-        if (a.tl1Id === user.id) return { role: 'Team Leader 1', shift: a.tl1Shift || 'N/A' };
-        if (a.tl2Id === user.id) return { role: 'Team Leader 2', shift: a.tl2Shift || 'N/A' };
-        return { role: '', shift: '' };
-      })();
+  .filter(a => [a.officer1Id, a.officer2Id, a.tl1Id, a.tl2Id].includes(user?.id))
+  .reduce((acc, a) => {
+    const date = toDateOnly(a.date);
 
-      if (!role) return acc;
+    const { role, shift } = (() => {
+      if (a.officer1Id === user.id) return { role: 'Officer 1', shift: a.officer1Shift };
+      if (a.officer2Id === user.id) return { role: 'Officer 2', shift: a.officer2Shift };
+      if (a.tl1Id === user.id) return { role: 'Team Leader 1', shift: a.tl1Shift || 'N/A' };
+      if (a.tl2Id === user.id) return { role: 'Team Leader 2', shift: a.tl2Shift || 'N/A' };
+      return { role: '', shift: '' };
+    })();
 
-      const key = `${date}-${shift}-${role}`;
-      if (!acc[key]) {
-        acc[key] = { date, role, shift, branches: [], aoIds: [] };
-      }
-      acc[key].branches.push(a.branchName);
-      acc[key].aoIds.push(a.accountOfficerEmployeeId);
-      return acc;
-    }, {});
+    if (!role) return acc;
 
-  const groupedList = Object.values(groupedAssignments);
+    const key = `${date}-${shift}-${role}`;
+    if (!acc[key]) {
+      acc[key] = { date, role, shift, branches: [], aoIds: [] };
+    }
+
+    // HANDLE branchNames — array or string
+    const branchNames = Array.isArray(a.branchNames)
+      ? a.branchNames
+      : a.branchNames ? a.branchNames.split(',').map(n => n.trim()) : [a.branchName || '—'];
+
+    // HANDLE accountOfficerEmployeeIds — array or string
+    const aoIds = Array.isArray(a.accountOfficerEmployeeIds)
+      ? a.accountOfficerEmployeeIds
+      : a.accountOfficerEmployeeIds ? a.accountOfficerEmployeeIds.split(',').map(id => id.trim()) : [a.accountOfficerEmployeeId || '—'];
+
+    acc[key].branches.push(...branchNames);
+    acc[key].aoIds.push(...aoIds);
+
+    return acc;
+  }, {});
+
+  const groupedList = Object.values(groupedAssignments).map(item => ({
+  ...item,
+  branches: [...new Set(item.branches.filter(Boolean))],
+  aoIds: [...new Set(item.aoIds.filter(Boolean))]
+}));
 
   const filteredAssignments = groupedList
     .filter(a => {

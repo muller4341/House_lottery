@@ -46,6 +46,7 @@ const Dashboard = () => {
   // Daily Assignment → CENTRAL_KYC_MANAGER or TEAM_LEADER
   ...(user?.role === 'CENTRAL_KYC_MANAGER' ||user?.role==='TEAM_LEADER' ? [
       { icon: CalendarIcon, title: 'Daily Assignment', path: '/daily-assignment', color: 'from-emerald-600 to-teal-600' },
+      { icon: CalendarIcon, title: 'Current Assignments', path: '/current-assignments', color: 'from-emerald-600 to-teal-600' },
 
   ] : []),
 
