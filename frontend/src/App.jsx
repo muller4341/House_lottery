@@ -24,7 +24,7 @@ function App() {
       {/* DEFAULT ROUTE = SIGNIN */}
       <Route path="/" element={<Signin />} />
       
-       <Route path="/current-assignments" element={< CurrentAssignmentsPage/>} />
+       
 
       {/* PUBLIC ROUTE */}
       <Route path="/signin" element={<Signin />} />
@@ -38,6 +38,7 @@ function App() {
         <Route path="/daily-assignment" element={<AssignmentPage />} />
         <Route path="/branch-management" element={<BranchManagementPage />} />
         <Route path="/my-assignments" element={<MyAssignmentsPage />} />
+        <Route path="/current-assignments" element={< CurrentAssignmentsPage/>} />
 
         {/* OFFICER PAGE — ProtectedRoute will redirect USER role here */}
         <Route path="/assignment-view" element={<AssignmentViewPage />} />

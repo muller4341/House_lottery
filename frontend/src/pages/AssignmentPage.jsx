@@ -753,6 +753,7 @@
 
 // DailyAssignmentPage.jsx
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { CalendarIcon, CheckIcon, ArrowLeftIcon, ArrowDownTrayIcon, DocumentArrowUpIcon, PencilIcon, EyeIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useSelector } from 'react-redux';
@@ -808,7 +809,46 @@ const DailyAssignmentPage = () => {
   const [editingId, setEditingId] = useState(null);
 const [assignmentsOnSelectedDate, setAssignmentsOnSelectedDate] = useState([]);
 const [dateSelected, setDateSelected] = useState(false);
-  
+const location = useLocation();
+// Auto-load assignment if coming from Current Assignments
+ useEffect(() => {
+  if (location.state?.editAssignment) {
+    const a = location.state.editAssignment;
+
+    // SAFELY HANDLE branchIds & accountOfficerEmployeeIds (array or string)
+    const getArray = (value) => 
+      Array.isArray(value) 
+        ? value.map(id => id.trim()) 
+        : (value ? value.split(',').map(id => id.trim()) : []);
+
+    setAssignmentForm({
+      id: a.id,
+      date: a.date.split('T')[0],
+      selectedBranches: getArray(a.branchIds),
+      branchIds: getArray(a.branchIds),
+      branchNames: a.branchNames ? a.branchNames.split(',').map(n => n.trim()) : [],
+      accountOfficerEmployeeIds: getArray(a.accountOfficerEmployeeIds),
+      officer1Id: a.officer1Id || '',
+      officer1Shift: a.officer1Shift || '',
+      officer1Phone: a.officer1Phone || '',
+      officer2Id: a.officer2Id || '',
+      officer2Shift: a.officer2Shift || '',
+      officer2Phone: a.officer2Phone || '',
+      tl1Id: a.tl1Id || '',
+      tl1Shift: a.tl1Shift || '',
+      tl1Phone: a.tl1Phone || '',
+      tl2Id: a.tl2Id || '',
+      tl2Shift: a.tl2Shift || '',
+      tl2Phone: a.tl2Phone || ''
+    });
+
+    setEditingId(a.id);
+    setDateSelected(true);
+    setShowEditModal(true);
+    // Clear state so it doesn't re-trigger
+    window.history.replaceState({}, '');
+  }
+}, [location.state]);
 const handleDateChange = async (e) => {
   
   const newDate = e.target.value;
@@ -972,7 +1012,8 @@ const handlePhoneChange = (e) => {
 
   const currentDate = assignmentForm.date;
 
-  // Check if officers are already assigned
+ // Only check for duplicates when CREATING (not editing)
+if (!editingId) {
   if (isOfficerAlreadyAssignedOnDate(assignmentForm.officer1Id, assignmentForm.officer1Shift, currentDate)) {
     alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer1Shift)} on this date.`);
     return;
@@ -982,7 +1023,7 @@ const handlePhoneChange = (e) => {
     alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer2Shift)} on this date.`);
     return;
   }
-
+}
   // Validate ALL required fields
   // FINAL VALIDATION — ONLY CHECKS WHAT YOU ACTUALLY FILLED
 if (
@@ -1082,6 +1123,7 @@ console.log("Sending to backend:", {
     }
 
     alert(editingId ? 'Assignment updated successfully!' : 'Assignment created successfully!');
+    navigate('/current-assignments');
     setAssignmentForm({
       id: '',
       date: '2025-12-09',
@@ -1217,7 +1259,7 @@ console.log("Sending to backend:", {
   };
 
   const renderAssignmentForm = () => (
-    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 lg:p-8 overflow-y-auto border border-fuchsia-200/50 flex-1 min-h-0">
+    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 lg:p-8 overflow-y-auto border border-fuchsia-200/50 flex-1 min-h-0 mx-20">
       <h2 className="text-2xl lg:text-3xl font-black text-fuchsia-800 mb-6 flex items-center space-x-2">
         <CalendarIcon className="h-6 w-6 lg:h-8 lg:w-8" />
         <span>Daily Assignment</span>
@@ -1229,8 +1271,10 @@ console.log("Sending to backend:", {
         
 
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-  <div>
-  <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-1 lg:mb-2">Date *</label>
+ <div>
+  <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-1 lg:mb-2">
+    Date *
+  </label>
   <input 
     type="date" 
     name="date" 
@@ -1239,11 +1283,18 @@ console.log("Sending to backend:", {
     className="w-full px-3 py-2 lg:py-3 border border-fuchsia-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent text-sm lg:text-base" 
     required 
   />
-  {assignmentForm.date && (
+  
+  {(!assignmentForm.date || assignmentForm.date === '2025-12-02') ? (
+    <p className="text-xs font-semibold text-red-600 mt-2 animate-pulse">
+      Please select a date first
+    </p>
+  ) : assignmentsOnSelectedDate.length > 0 ? (
     <p className="text-xs text-gray-500 mt-1">
-      {assignmentsOnSelectedDate.length > 0 
-        ? `${assignmentsOnSelectedDate.length} assignment(s) already exist on this date`
-        : <span className="text-red-600 font-semibold">Please select a date first</span>}
+      {assignmentsOnSelectedDate.length} assignment(s) already exist on this date
+    </p>
+  ) : (
+    <p className="text-xs text-green-600 font-medium mt-1">
+      No assignments yet — you can assign freely
     </p>
   )}
 </div>
@@ -1581,7 +1632,7 @@ console.log("Sending to backend:", {
     </div>
   );
 
-  const renderAssignmentsTable = () => (
+ const renderAssignmentsTable = () => (
     <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 lg:p-8 overflow-y-auto border border-fuchsia-200/50 flex-1 min-h-0">
       <h2 className="text-2xl lg:text-3xl font-black text-fuchsia-800 mb-6">Current Assignments</h2>
       <div className="mt-6 mb-4 flex space-x-4">
@@ -1701,7 +1752,7 @@ console.log("Sending to backend:", {
   );
 
   const renderEditModal = () => showEditModal && (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 mt-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-gray-900">Edit Assignment</h3>
@@ -1812,16 +1863,10 @@ console.log("Sending to backend:", {
 
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 lg:py-6 overflow-hidden min-h-0">
           {error && <div className="text-red-600 text-center mb-4 p-4 bg-red-50 rounded-lg">{error}</div>}
-          {canEdit ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-              {renderAssignmentForm()}
-              {renderAssignmentsTable()}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 lg:gap-6">
-              {renderAssignmentsTable()}
-            </div>
-          )}
+          {/* ONLY SHOW ASSIGNMENTS TABLE IF NOT IN EDIT MODE FROM CURRENT ASSIGNMENTS PAGE */}
+<div className="grid grid-cols-1 gap-4 lg:gap-6">
+  {renderAssignmentForm()}
+</div>
           {renderEditModal()}
           {renderViewModal()}
         </main>
