@@ -60,34 +60,36 @@ const AssignmentViewPage = () => {
   }, []);
 
   useEffect(() => {
-  if (!filterId) {
+  if (!filterId.trim()) {
     setFilteredAssignments(assignments);
     return;
   }
 
-  const searchTerm = filterId.toLowerCase();
+  const term = filterId.toLowerCase().trim();
 
-  const filtered = assignments.filter(assignment => {
-    // 1. Get all AO IDs — handle array OR string
-    let aoIds = [];
+  const filtered = assignments.filter(a => {
+    // AO IDs (array or string)
+    const aoIds = Array.isArray(a.accountOfficerEmployeeIds)
+      ? a.accountOfficerEmployeeIds.map(id => id.toLowerCase())
+      : a.accountOfficerEmployeeIds
+        ? a.accountOfficerEmployeeIds.split(',').map(id => id.trim().toLowerCase())
+        : [];
 
-    if (Array.isArray(assignment.accountOfficerEmployeeIds)) {
-      aoIds = assignment.accountOfficerEmployeeIds.map(id => id.trim().toLowerCase());
-    } else if (typeof assignment.accountOfficerEmployeeIds === 'string') {
-      aoIds = assignment.accountOfficerEmployeeIds
-        .split(',')
-        .map(id => id.trim().toLowerCase())
-        .filter(Boolean);
-    }
+    // Branch names (array or string)
+    const branches = Array.isArray(a.branchNames)
+      ? a.branchNames.map(b => b.toLowerCase())
+      : a.branchNames
+        ? a.branchNames.split(',').map(b => b.trim().toLowerCase())
+        : [];
 
-    // 2. Also check old single field (for safety)
-    const singleAoId = assignment.accountOfficerEmployeeId || assignment.accountOfficer?.employeeId || '';
-    if (singleAoId.toLowerCase().includes(searchTerm)) {
-      return true;
-    }
+    // Date (formatted like "12 Dec 2025")
+    const formattedDate = formatDate(a.date).toLowerCase();
 
-    // 3. Search in all AO IDs
-    return aoIds.some(id => id.includes(searchTerm));
+    return (
+      aoIds.some(id => id.includes(term)) ||
+      branches.some(b => b.includes(term)) ||
+      formattedDate.includes(term)
+    );
   });
 
   setFilteredAssignments(filtered);
@@ -199,17 +201,16 @@ const AssignmentViewPage = () => {
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                  <input
-                    type="text"
-                    placeholder="Search by Account Officer"
-                    value={filterId}
-                    onChange={(e) => setFilterId(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    className="w-64 pl-12 pr-5 py-3 bg-white/70 backdrop-blur-md border border-fuchsia-300/50 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 hover:border-fuchsia-400 text-sm font-medium shadow-inner"
-                    maxLength={4}
-                  />
-                </div>
+               <div className="relative">
+  <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+  <input
+    type="text"
+    placeholder="Search by AO ID, Branch, or Date (e.g. 12 Dec)"
+    value={filterId}
+    onChange={(e) => setFilterId(e.target.value)}
+    className="w-80 pl-12 pr-5 py-3 bg-white/70 backdrop-blur-md border border-fuchsia-300/50 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 hover:border-fuchsia-400 text-sm font-medium shadow-inner"
+  />
+</div>
                 <button 
                   onClick={handleExport} 
                   className="flex items-center space-x-2 px-5 py-3 !bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-bold rounded-2xl hover:from-fuchsia-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -232,79 +233,73 @@ const AssignmentViewPage = () => {
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto min-h-0">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-autoh-96 lg:h-[600px]  overflow-y-auto border border-gray-200 rounded-lg">
+  <div className="sticky top-0 z-10 bg-gradient-to-r from-fuchsia-100 to-rose-100">
                   <table className="min-w-full divide-y divide-fuchsia-200">
-                    <thead className="bg-gradient-to-r from-fuchsia-50 to-pink-50 sticky top-0">
-                      <tr>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Branch</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Account Officer</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Officer 1</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Phone</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Shift</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Officer 2</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Phone</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Shift</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">TL 1</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Phone</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Shift</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">TL 2</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Phone</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Shift</th>
-                        <th className="px-4 py-4 text-left text-xs font-bold text-fuchsia-800 uppercase tracking-wider">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-fuchsia-100">
-                      {filteredAssignments.map((assignment, idx) => (
-                        <tr key={assignment.id} className={`hover:bg-fuchsia-50/70 transition-all duration-300 ${idx % 2 === 0 ? 'bg-gray-50/30' : ''}`}>
-                         <td className="px-4 py-4 text-sm font-semibold text-gray-900">
-  <div className="flex flex-col gap-1">
-    {Array.isArray(assignment.branchNames)
-      ? assignment.branchNames.map((name, i) => (
-          <span key={i} className="px-3 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
-            {name.trim()}
-          </span>
-        ))
-      : assignment.branchNames?.split(',').map((name, i) => (
-          <span key={i} className="px-3 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
-            {name.trim()}
-          </span>
-        )) || <span className="text-gray-500">—</span>
-    }
-  </div>
-</td>
-                         <td className="px-4 py-4 text-sm font-bold text-fuchsia-700">
-  <div className="flex flex-col gap-1">
-    {Array.isArray(assignment.accountOfficerEmployeeIds)
-      ? assignment.accountOfficerEmployeeIds.map((id, i) => (
-          <span key={i} className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
-            {id.trim()}
-          </span>
-        ))
-      : assignment.accountOfficerEmployeeIds?.split(',').map((id, i) => (
-          <span key={i} className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
-            {id.trim()}
-          </span>
-        )) || <span className="text-gray-500">—</span>
-    }
-  </div>
-</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-800">{assignment.officer1?.name || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{assignment.officer1Phone || assignment.officer1?.phone || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-emerald-700">{getShiftLabel(assignment.officer1Shift)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-800">{assignment.officer2?.name || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{assignment.officer2Phone || assignment.officer2?.phone || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-teal-700">{getShiftLabel(assignment.officer2Shift)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-800">{assignment.tl1?.name || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{assignment.tl1Phone || assignment.tl1?.phone || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-purple-700">{getShiftLabel(assignment.tl1Shift)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-800">{assignment.tl2?.name || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{assignment.tl2Phone || assignment.tl2?.phone || '-'}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-pink-700">{getShiftLabel(assignment.tl2Shift)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{formatDate(assignment.date)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+  <thead className="bg-gradient-to-r from-fuchsia-100 to-rose-100 sticky top-0">
+    <tr>
+      <th rowSpan="2" className="px-6 py-4 text-left text-xs font-bold text-fuchsia-900 uppercase tracking-wider">Branch</th>
+      <th rowSpan="2" className="px-6 py-4 text-left text-xs font-bold text-fuchsia-900 uppercase tracking-wider">Account Officer</th>
+      <th colSpan="4" className="px-6 py-4 text-center text-sm font-extrabold text-emerald-800 bg-emerald-50/70 border-x-2 border-emerald-300">Shift I</th>
+      <th colSpan="4" className="px-6 py-4 text-center text-sm font-extrabold text-teal-800 bg-teal-50/70">Shift II</th>
+      <th rowSpan="2" className="px-6 py-4 text-left text-xs font-bold text-fuchsia-900 uppercase tracking-wider">Date</th>
+    </tr>
+    <tr>
+      {/* Shift I Subheaders */}
+      <th className="px-4 py-3 text-xs font-bold text-emerald-700">Officer</th>
+      <th className="px-4 py-3 text-xs font-bold text-emerald-700">Phone</th>
+      <th className="px-4 py-3 text-xs font-bold text-emerald-700">TL</th>
+      <th className="px-4 py-3 text-xs font-bold text-emerald-700">TL Phone</th>
+
+      {/* Shift II Subheaders */}
+      <th className="px-4 py-3 text-xs font-bold text-teal-700">Officer</th>
+      <th className="px-4 py-3 text-xs font-bold text-teal-700">Phone</th>
+      <th className="px-4 py-3 text-xs font-bold text-teal-700">TL</th>
+      <th className="px-4 py-3 text-xs font-bold text-teal-700">TL Phone</th>
+    </tr>
+  </thead>
+  <tbody className="bg-white divide-y divide-gray-200">
+    {filteredAssignments.map((a, idx) => (
+      <tr key={a.id} className={`hover:bg-fuchsia-50/50 transition-all ${idx % 2 === 0 ? 'bg-gray-50/30' : ''}`}>
+        {/* Branch & AO IDs */}
+        <td className="px-6 py-5 align-top">
+          <div className="flex flex-col gap-2">
+            {(Array.isArray(a.branchNames) ? a.branchNames : a.branchNames?.split(',') || []).map((name, i) => (
+              <span key={i} className="px-3 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
+                {name.trim()}
+              </span>
+            ))}
+          </div>
+        </td>
+        <td className="px-6 py-5 align-top">
+          <div className="flex flex-col gap-2">
+            {(Array.isArray(a.accountOfficerEmployeeIds) ? a.accountOfficerEmployeeIds : a.accountOfficerEmployeeIds?.split(',') || []).map((id, i) => (
+              <span key={i} className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
+                {id.trim()}
+              </span>
+            ))}
+          </div>
+        </td>
+
+        {/* Shift I */}
+        <td className="px-4 py-5 text-sm text-gray-800 font-semibold">{a.officer1Shift === 'I' ? a.officer1?.name || '-' : '-'}</td>
+        <td className="px-4 py-5 text-sm text-gray-700">{a.officer1Shift === 'I' ? (a.officer1Phone || a.officer1?.phone || '-') : '-'}</td>
+        <td className="px-4 py-5 text-sm text-gray-800 font-semibold">{a.tl1Shift === 'I' ? a.tl1?.name || '-' : (a.tl2Shift === 'I' ? a.tl2?.name || '-' : '-')}</td>
+        <td className="px-4 py-5 text-sm text-gray-700">{a.tl1Shift === 'I' ? (a.tl1Phone || a.tl1?.phone || '-') : (a.tl2Shift === 'I' ? (a.tl2Phone || a.tl2?.phone || '-') : '-')}</td>
+
+        {/* Shift II */}
+        <td className="px-4 py-5 text-sm text-gray-800 font-semibold">{a.officer2Shift === 'II' ? a.officer2?.name || '-' : '-'}</td>
+        <td className="px-4 py-5 text-sm text-gray-700">{a.officer2Shift === 'II' ? (a.officer2Phone || a.officer2?.phone || '-') : '-'}</td>
+        <td className="px-4 py-5 text-sm text-gray-800 font-semibold">{a.tl1Shift === 'II' ? a.tl1?.name || '-' : (a.tl2Shift === 'II' ? a.tl2?.name || '-' : '-')}</td>
+        <td className="px-4 py-5 text-sm text-gray-700">{a.tl1Shift === 'II' ? (a.tl1Phone || a.tl1?.phone || '-') : (a.tl2Shift === 'II' ? (a.tl2Phone || a.tl2?.phone || '-') : '-')}</td>
+
+        {/* Date */}
+        <td className="px-6 py-5 text-sm font-bold text-gray-900">{formatDate(a.date)}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+                </div>
                 </div>
 
                 {filteredAssignments.length === 0 && (
