@@ -1,5 +1,6 @@
-// // DailyAssignmentPage.jsx
+
 // import React, { useState, useEffect } from 'react';
+// import { useLocation } from 'react-router-dom';
 // import { useNavigate } from 'react-router-dom';
 // import { CalendarIcon, CheckIcon, ArrowLeftIcon, ArrowDownTrayIcon, DocumentArrowUpIcon, PencilIcon, EyeIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 // import { useSelector } from 'react-redux';
@@ -25,9 +26,10 @@
 //   const [assignmentForm, setAssignmentForm] = useState({
 //     id: '',
 //     date: '2025-12-02',
-//     branchId: '',
-//     branchName: '',
-//     accountOfficerEmployeeId: '',
+//    selectedBranches: [],           // ← NEW
+//   branchIds: [],                  // ← NEW
+//   branchNames: [],                // ← NEW
+//   accountOfficerEmployeeIds: [],  // ← NEW (replaces single string)
 //     officer1Id: '',
 //     officer1Shift: '',
 //     officer1Phone: '',
@@ -52,7 +54,80 @@
 //   const [showViewModal, setShowViewModal] = useState(false);
 //   const [viewingAssignment, setViewingAssignment] = useState(null);
 //   const [editingId, setEditingId] = useState(null);
+// const [assignmentsOnSelectedDate, setAssignmentsOnSelectedDate] = useState([]);
+// const [dateSelected, setDateSelected] = useState(false);
+// const location = useLocation();
+// // Auto-load assignment if coming from Current Assignments
+//  useEffect(() => {
+//   if (location.state?.editAssignment) {
+//     const a = location.state.editAssignment;
+
+//     // SAFELY HANDLE branchIds & accountOfficerEmployeeIds (array or string)
+//     const getArray = (value) => 
+//       Array.isArray(value) 
+//         ? value.map(id => id.trim()) 
+//         : (value ? value.split(',').map(id => id.trim()) : []);
+
+//     setAssignmentForm({
+//       id: a.id,
+//       date: a.date.split('T')[0],
+//       selectedBranches: getArray(a.branchIds),
+//       branchIds: getArray(a.branchIds),
+//       branchNames: a.branchNames ? a.branchNames.split(',').map(n => n.trim()) : [],
+//       accountOfficerEmployeeIds: getArray(a.accountOfficerEmployeeIds),
+//       officer1Id: a.officer1Id || '',
+//       officer1Shift: a.officer1Shift || '',
+//       officer1Phone: a.officer1Phone || '',
+//       officer2Id: a.officer2Id || '',
+//       officer2Shift: a.officer2Shift || '',
+//       officer2Phone: a.officer2Phone || '',
+//       tl1Id: a.tl1Id || '',
+//       tl1Shift: a.tl1Shift || '',
+//       tl1Phone: a.tl1Phone || '',
+//       tl2Id: a.tl2Id || '',
+//       tl2Shift: a.tl2Shift || '',
+//       tl2Phone: a.tl2Phone || ''
+//     });
+
+//     setEditingId(a.id);
+//     setDateSelected(true);
+//     setShowEditModal(true);
+//     // Clear state so it doesn't re-trigger
+//     window.history.replaceState({}, '');
+//   }
+// }, [location.state]);
+// const handleDateChange = async (e) => {
   
+//   const newDate = e.target.value;
+//   setAssignmentForm(prev => ({ ...prev, date: newDate }));
+//   setDateSelected(!!newDate);
+
+//   if (!newDate) {
+//     setAssignmentsOnSelectedDate([]);
+//     return;
+//   }
+
+//   try {
+//     const response = await fetch(`/api/assignments?date=${newDate}`);
+//     if (response.ok) {
+//       const data = await response.json();
+//       setAssignmentsOnSelectedDate(data.assignments || []);
+//     } else {
+//       setAssignmentsOnSelectedDate([]);
+//     }
+//   } catch (err) {
+//     console.error('Error fetching assignments for date:', err);
+//     setAssignmentsOnSelectedDate([]);
+//   }
+// };
+
+// const showDateWarning = () => {
+//   if (!dateSelected) {
+//     alert("Please select a date first!");
+//     return true;
+//   }
+//   return false;
+// };
 
 //   const fetchBranches = async () => {
 //     try {
@@ -103,6 +178,7 @@
 //     fetchAllUsers();
 //   }, []);
 
+
 //   const fetchAssignments = async () => {
 //     try {
 //       const response = await fetch('/api/assignments');
@@ -137,32 +213,37 @@
 //     }));
 //   };
 
-//   const handleSelectChange = (field, value) => {
-//     const selectedUser = assignedOfficers.find(u => u.id === value) ||
-//                          teamLeaders.find(u => u.id === value);
-//     setAssignmentForm(prev => ({
-//       ...prev,
-//       [`${field}Id`]: value,
-//       [`${field}Phone`]: selectedUser?.phone || ''
-//     }));
-//   };
+//   // FIXED: handleSelectChange — now works for Officers AND Team Leaders
+// const handleSelectChange = (field, value) => {
+//   const userList = field.includes('officer') ? assignedOfficers : teamLeaders;
+//   const selectedUser = userList.find(u => u.id === value);
 
-//   const handlePhoneChange = (e) => {
-//     const field = e.target.name.replace('Phone', '');
-//     setAssignmentForm(prev => ({
-//       ...prev,
-//       [`${field}Phone`]: e.target.value
-//     }));
-//   };
+//   setAssignmentForm(prev => ({
+//     ...prev,
+//     [`${field}Id`]: value,
+//     [`${field}Phone`]: selectedUser?.phone || ''
+//   }));
+// };
 
-//   const handleShiftChange = (e) => {
-//     const field = e.target.name.replace('Shift', '');
-//     setAssignmentForm(prev => ({
-//       ...prev,
-//       [`${field}Shift`]: e.target.value
-//     }));
-//   };
+// // FIXED: handleShiftChange — now works perfectly
+// const handleShiftChange = (e) => {
+//   const field = e.target.name.replace('Shift', '');
+//   const shift = e.target.value;
 
+//   setAssignmentForm(prev => ({
+//     ...prev,
+//     [`${field}Shift`]: shift
+//   }));
+// };
+
+// // FIXED: handlePhoneChange
+// const handlePhoneChange = (e) => {
+//   const field = e.target.name.replace('Phone', '');
+//   setAssignmentForm(prev => ({
+//     ...prev,
+//     [`${field}Phone`]: e.target.value
+//   }));
+// };
 //   const isOfficerAlreadyAssignedOnDate = (officerId, shift, currentDate) => {
 //     if (!officerId || !currentDate) return false;
 //     return assignments.some(a => {
@@ -174,93 +255,149 @@
 //   };
 
 //   const handleAssignSubmit = async (e) => {
-//     e.preventDefault();
+//   e.preventDefault();
 
-//     const currentDate = assignmentForm.date;
+//   const currentDate = assignmentForm.date;
 
-//     if (isOfficerAlreadyAssignedOnDate(assignmentForm.officer1Id, assignmentForm.officer1Shift, currentDate)) {
-//       alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer1Shift)} on this date.`);
-//       return;
+//  // Only check for duplicates when CREATING (not editing)
+// if (!editingId) {
+//   if (isOfficerAlreadyAssignedOnDate(assignmentForm.officer1Id, assignmentForm.officer1Shift, currentDate)) {
+//     alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer1Shift)} on this date.`);
+//     return;
+//   }
+
+//   if (isOfficerAlreadyAssignedOnDate(assignmentForm.officer2Id, assignmentForm.officer2Shift, currentDate)) {
+//     alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer2Shift)} on this date.`);
+//     return;
+//   }
+// }
+//   // Validate ALL required fields
+//   // FINAL VALIDATION — ONLY CHECKS WHAT YOU ACTUALLY FILLED
+// if (
+//   !assignmentForm.date ||
+//   assignmentForm.branchIds.length === 0 ||
+//   assignmentForm.accountOfficerEmployeeIds.length === 0 ||
+//   assignmentForm.accountOfficerEmployeeIds.some(id => !/^\d{4}$/.test(id.trim())) ||
+//   !assignmentForm.officer1Id ||
+//   !assignmentForm.officer1Shift ||
+//   !assignmentForm.officer1Phone ||
+//   !assignmentForm.officer2Id ||
+//   !assignmentForm.officer2Shift ||
+//   !assignmentForm.officer2Phone ||
+//   !assignmentForm.tl1Id ||
+//   !assignmentForm.tl1Shift ||
+//   !assignmentForm.tl1Phone ||
+//   !assignmentForm.tl2Id ||
+//   !assignmentForm.tl2Shift ||
+//   !assignmentForm.tl2Phone
+// ) {
+//   // SHOW WHAT'S MISSING
+//   let missing = [];
+//   if (!assignmentForm.date) missing.push('Date');
+//   if (assignmentForm.branchIds.length === 0) missing.push('Branches');
+//   if (assignmentForm.accountOfficerEmployeeIds.length === 0) missing.push('AO IDs');
+//   if (!assignmentForm.officer1Id) missing.push('Officer 1');
+//   if (!assignmentForm.officer1Shift) missing.push('Officer 1 Shift');
+//   if (!assignmentForm.officer1Phone) missing.push('Officer 1 Phone');
+//   if (!assignmentForm.officer2Id) missing.push('Officer 2');
+//   if (!assignmentForm.officer2Shift) missing.push('Officer 2 Shift');
+//   if (!assignmentForm.officer2Phone) missing.push('Officer 2 Phone');
+//   if (!assignmentForm.tl1Id) missing.push('Team Leader 1');
+//   if (!assignmentForm.tl1Shift) missing.push('TL1 Shift');
+//   if (!assignmentForm.tl1Phone) missing.push('TL1 Phone');
+//   if (!assignmentForm.tl2Id) missing.push('Team Leader 2');
+//   if (!assignmentForm.tl2Shift) missing.push('TL2 Shift');
+//   if (!assignmentForm.tl2Phone) missing.push('TL2 Phone');
+
+//   alert('Please fill:\n• ' + missing.join('\n• '));
+//   return;
+// }
+
+//   // DEBUG: Remove after testing — shows ALL data being sent
+// console.log("Sending to backend:", {
+//   date: assignmentForm.date,
+//   branchIds: assignmentForm.branchIds,
+//   branchNames: assignmentForm.branchNames,
+//   accountOfficerEmployeeIds: assignmentForm.accountOfficerEmployeeIds,
+  
+//   // OFFICERS
+//   officer1Id: assignmentForm.officer1Id,
+//   officer1Shift: assignmentForm.officer1Shift,
+//   officer1Phone: assignmentForm.officer1Phone,
+  
+//   officer2Id: assignmentForm.officer2Id,
+//   officer2Shift: assignmentForm.officer2Shift,
+//   officer2Phone: assignmentForm.officer2Phone,
+  
+//   // TEAM LEADERS
+//   tl1Id: assignmentForm.tl1Id,
+//   tl1Shift: assignmentForm.tl1Shift,
+//   tl1Phone: assignmentForm.tl1Phone,
+  
+//   tl2Id: assignmentForm.tl2Id,
+//   tl2Shift: assignmentForm.tl2Shift,
+//   tl2Phone: assignmentForm.tl2Phone
+// });
+
+//   const url = editingId ? `/api/assignments/${editingId}` : '/api/assignments';
+//   const method = editingId ? 'PUT' : 'POST';
+//   try {
+//     const response = await fetch(url, {
+//       method,
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         date: assignmentForm.date,
+//         branchIds: assignmentForm.branchIds,
+//         accountOfficerEmployeeIds: assignmentForm.accountOfficerEmployeeIds,
+//         officer1Id: assignmentForm.officer1Id,
+//         officer1Shift: assignmentForm.officer1Shift,
+//         officer1Phone: assignmentForm.officer1Phone,
+//         officer2Id: assignmentForm.officer2Id,
+//         officer2Shift: assignmentForm.officer2Shift,
+//         officer2Phone: assignmentForm.officer2Phone,
+//         tl1Id: assignmentForm.tl1Id,
+//         tl1Shift: assignmentForm.tl1Shift,
+//         tl1Phone: assignmentForm.tl1Phone,
+//         tl2Id: assignmentForm.tl2Id,
+//         tl2Shift: assignmentForm.tl2Shift,
+//         tl2Phone: assignmentForm.tl2Phone
+//       })
+//     });
+
+//     if (!response.ok) {
+//       const errorData = await response.json();
+//       throw new Error(errorData.error || 'Failed to save assignment');
 //     }
 
-//     if (isOfficerAlreadyAssignedOnDate(assignmentForm.officer2Id, assignmentForm.officer2Shift, currentDate)) {
-//       alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer2Shift)} on this date.`);
-//       return;
-//     }
-
-//     if (
-//       !assignmentForm.date ||
-//       !assignmentForm.branchId ||
-//       !assignmentForm.accountOfficerEmployeeId.trim() ||
-//       !/^\d{4}$/.test(assignmentForm.accountOfficerEmployeeId.trim()) ||
-//       !assignmentForm.officer1Id ||
-//       !assignmentForm.officer1Shift ||
-//       !assignmentForm.officer2Id ||
-//       !assignmentForm.officer2Shift ||
-//       (!assignmentForm.tl1Id && !assignmentForm.tl2Id) ||
-//       (assignmentForm.tl1Id && !assignmentForm.tl1Shift) ||
-//       (assignmentForm.tl2Id && !assignmentForm.tl2Shift)
-//     ) {
-//       alert('Please fill all required fields. Account Officer ID must be exactly 4 digits. At least one Team Leader with shift is required.');
-//       return;
-//     }
-
-//     const url = editingId ? `/api/assignments/${editingId}` : '/api/assignments';
-//     const method = editingId ? 'PUT' : 'POST';
-//     try {
-//       const response = await fetch(url, {
-//         method,
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({
-//           date: assignmentForm.date,
-//           branchId: assignmentForm.branchId,
-//           officer1Id: assignmentForm.officer1Id,
-//           officer1Shift: assignmentForm.officer1Shift,
-//           officer1Phone: assignmentForm.officer1Phone || null,
-//           officer2Id: assignmentForm.officer2Id,
-//           officer2Shift: assignmentForm.officer2Shift,
-//           officer2Phone: assignmentForm.officer2Phone || null,
-//           tl1Id: assignmentForm.tl1Id || null,
-//           tl1Shift: assignmentForm.tl1Id ? assignmentForm.tl1Shift : null,
-//           tl1Phone: assignmentForm.tl1Id ? (assignmentForm.tl1Phone || null) : null,
-//           tl2Id: assignmentForm.tl2Id || null,
-//           tl2Shift: assignmentForm.tl2Id ? assignmentForm.tl2Shift : null,
-//           tl2Phone: assignmentForm.tl2Id ? (assignmentForm.tl2Phone || null) : null
-//         })
-//       });
-
-//       if (!response.ok) {
-//         const errorData = await response.json();
-//         throw new Error(errorData.error || 'Failed to save assignment');
-//       }
-
-//       alert(editingId ? 'Assignment updated successfully!' : 'Assignment created successfully!');
-//       setAssignmentForm({
-//         id: '',
-//         date: '2025-12-02',
-//         branchId: '',
-//         branchName: '',
-//         accountOfficerEmployeeId: '',
-//         officer1Id: '',
-//         officer1Shift: '',
-//         officer1Phone: '',
-//         officer2Id: '',
-//         officer2Shift: '',
-//         officer2Phone: '',
-//         tl1Id: '',
-//         tl1Shift: '',
-//         tl1Phone: '',
-//         tl2Id: '',
-//         tl2Shift: '',
-//         tl2Phone: ''
-//       });
-//       setEditingId(null);
-//       setShowEditModal(false);
-//       fetchAssignments();
-//     } catch (error) {
-//       alert(error.message);
-//     }
-//   };
+//     alert(editingId ? 'Assignment updated successfully!' : 'Assignment created successfully!');
+//     navigate('/current-assignments');
+//     setAssignmentForm({
+//       id: '',
+//       date: '2025-12-09',
+//       selectedBranches: [],
+//       branchIds: [],
+//       branchNames: [],
+//       accountOfficerEmployeeIds: [],
+//       officer1Id: '',
+//       officer1Shift: '',
+//       officer1Phone: '',
+//       officer2Id: '',
+//       officer2Shift: '',
+//       officer2Phone: '',
+//       tl1Id: '',
+//       tl1Shift: '',
+//       tl1Phone: '',
+//       tl2Id: '',
+//       tl2Shift: '',
+//       tl2Phone: ''
+//     });
+//     setEditingId(null);
+//     setShowEditModal(false);
+//     fetchAssignments();
+//   } catch (error) {
+//     alert(error.message);
+//   }
+// };
 
 //   const handleBulkUpload = async (e) => {
 //     e.preventDefault();
@@ -312,6 +449,8 @@
 //       alert(error.message);
 //     }
 //   };
+  
+  
 
 //   const openEditModal = (assignment) => {
 //     setAssignmentForm({
@@ -367,7 +506,7 @@
 //   };
 
 //   const renderAssignmentForm = () => (
-//     <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 lg:p-8 overflow-y-auto border border-fuchsia-200/50 flex-1 min-h-0">
+//     <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 lg:p-8 overflow-y-auto border border-fuchsia-200/50 flex-1 min-h-0 mx-20">
 //       <h2 className="text-2xl lg:text-3xl font-black text-fuchsia-800 mb-6 flex items-center space-x-2">
 //         <CalendarIcon className="h-6 w-6 lg:h-8 lg:w-8" />
 //         <span>Daily Assignment</span>
@@ -375,130 +514,352 @@
 
 //       <form onSubmit={handleAssignSubmit} className="space-y-6">
 //         {/* Form remains 100% unchanged */}
-//         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-//           <div>
-//             <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-1 lg:mb-2">Date *</label>
-//             <input type="date" name="date" value={assignmentForm.date} onChange={handleFormChange} className="w-full px-3 py-2 lg:py-3 border border-fuchsia-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent text-sm lg:text-base" required />
-//           </div>
-//           {/* REPLACE THIS ENTIRE BLOCK — Branch + AO ID */}
-// {/* REPLACE THIS ENTIRE BLOCK — Branch Selection */}
-// <div className="col-span-1 md:col-span-2">
-//   <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-3">
-//     Branches * (Select multiple)
+//         {/* REPLACE FROM <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6"> */}
+        
+
+// <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+//  <div>
+//   <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-1 lg:mb-2">
+//     Date *
 //   </label>
-//   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto border border-fuchsia-300 rounded-lg p-4 bg-white/50">
-//     {branches.map(branch => (
-//       <label key={branch.id} className="flex items-center gap-3 p-3 hover:bg-fuchsia-50/50 rounded-lg cursor-pointer transition-colors">
-//         <input
-//           type="checkbox"
-//           checked={assignmentForm.selectedBranches?.includes(branch.id) || false}
-//           onChange={(e) => {
-//             const checked = e.target.checked;
-//             setAssignmentForm(prev => {
-//               const selected = prev.selectedBranches || [];
-//               const newSelected = checked 
-//                 ? [...selected, branch.id]
-//                 : selected.filter(id => id !== branch.id);
-              
-//               // Auto-fill AO IDs
-//               const aoIds = branches
-//                 .filter(b => newSelected.includes(b.id))
-//                 .map(b => b.accountOfficerId)
-//                 .filter(Boolean);
-
-//               return {
-//                 ...prev,
-//                 selectedBranches: newSelected,
-//                 branchIds: newSelected,
-//                 branchNames: branches.filter(b => newSelected.includes(b.id)).map(b => b.name),
-//                 accountOfficerEmployeeIds: aoIds
-//               };
-//             });
-//           }}
-//           className="w-5 h-5 text-fuchsia-600 rounded focus:ring-fuchsia-500"
-//         />
-//         <div>
-//           <div className="font-medium text-gray-800 text-sm">{branch.name}</div>
-//           <div className="text-xs text-gray-500">AO ID: {branch.accountOfficerId || '—'}</div>
-//         </div>
-//       </label>
-//     ))}
-//   </div>
-
-//   {/* Show selected AO IDs */}
-//   {assignmentForm.accountOfficerEmployeeIds?.length > 0 && (
-//     <div className="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-lg">
-//       <p className="text-sm font-medium text-rose-800">
-//         Selected AO IDs: {assignmentForm.accountOfficerEmployeeIds.join(', ')}
-//       </p>
-//     </div>
+//   <input 
+//     type="date" 
+//     name="date" 
+//     value={assignmentForm.date} 
+//     onChange={handleDateChange}
+//     className="w-full px-3 py-2 lg:py-3 border border-fuchsia-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent text-sm lg:text-base" 
+//     required 
+//   />
+  
+//   {(!assignmentForm.date || assignmentForm.date === '2025-12-02') ? (
+//     <p className="text-xs font-semibold text-red-600 mt-2 animate-pulse">
+//       Please select a date first
+//     </p>
+//   ) : assignmentsOnSelectedDate.length > 0 ? (
+//     <p className="text-xs text-gray-500 mt-1">
+//       {assignmentsOnSelectedDate.length} assignment(s) already exist on this date
+//     </p>
+//   ) : (
+//     <p className="text-xs text-green-600 font-medium mt-1">
+//       No assignments yet — you can assign freely
+//     </p>
 //   )}
 // </div>
-//           <div>
-//             <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-1 lg:mb-2">Account Officer ID *</label>
-//             <input type="text" name="accountOfficerEmployeeId" value={assignmentForm.accountOfficerEmployeeId} onChange={handleFormChange} className="w-full px-3 py-2 lg:py-3 border border-fuchsia-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent text-sm lg:text-base" maxLength={4} pattern="\d{4}" required />
-//           </div>
-//         </div>
+ 
 
+//   {/* MULTIPLE BRANCHES + MANUAL AO ID */}
+//   <div className="md:col-span-2">
+//     <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-3">Branches * (Select multiple)</label>
+//     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto border border-fuchsia-300 rounded-lg p-4 bg-white/50">
+//     {branches
+//   .filter(branch => {
+//     // SAFELY check if this branch is already used on selected date
+//     return !assignmentsOnSelectedDate.some(a => {
+//       const usedIds = Array.isArray(a.branchIds) 
+//         ? a.branchIds 
+//         : (a.branchIds ? a.branchIds.split(',').map(id => id.trim()) : []);
+//       return usedIds.includes(branch.id);
+//     });
+//   })
+//   .map(branch => (
+//     <label key={branch.id} className="flex items-center gap-3 p-3 hover:bg-fuchsia-50/50 rounded-lg cursor-pointer transition-colors"
+//     onClick={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}>
+//       <input
+//         type="checkbox"
+//         checked={assignmentForm.selectedBranches?.includes(branch.id) || false}
+//         disabled={!dateSelected}
+//         onChange={(e) => {
+//           const checked = e.target.checked;
+//           setAssignmentForm(prev => {
+//             const selected = prev.selectedBranches || [];
+//             const newSelected = checked
+//               ? [...selected, branch.id]
+//               : selected.filter(id => id !== branch.id);
+
+//             const selectedBranchesData = branches.filter(b => newSelected.includes(b.id));
+//             const aoIds = selectedBranchesData.map(b => b.accountOfficerId).filter(Boolean);
+
+//             return {
+//               ...prev,
+//               selectedBranches: newSelected,
+//               branchIds: newSelected,
+//               branchNames: selectedBranchesData.map(b => b.name),
+//               accountOfficerEmployeeIds: aoIds.length > 0 ? aoIds : prev.accountOfficerEmployeeIds
+//             };
+//           });
+//         }}
+//         className="w-5 h-5 text-fuchsia-600 rounded focus:ring-fuchsia-500"
+//       />
+//       <div>
+//         <div className="font-medium text-gray-800 text-sm">{branch.name}</div>
+//         <div className="text-xs text-gray-500">AO: {branch.accountOfficerId || '—'}</div>
+//       </div>
+//     </label>
+//   ))}
+      
+//  </div>
+
+//     {/* Manual AO ID Input — NOW AUTO-CHECKS BRANCHES */}
+// <label className="block text-xs lg:text-sm font-semibold text-gray-700 mt-4 mb-2">
+//   Account Officer IDs * (Auto-filled or edit manually)
+// </label>
+// <input
+//   type="text"
+//   value={Array.isArray(assignmentForm.accountOfficerEmployeeIds) 
+//   ? assignmentForm.accountOfficerEmployeeIds.join(', ') 
+//   : ''}
+//   onChange={(e) => {
+//     const input = e.target.value;
+//     const newAoIds = input.split(',').map(id => id.trim()).filter(id => id);
+
+//     // AUTO-CHECK BRANCHES THAT MATCH THESE AO IDs
+//     const matchingBranchIds = branches
+//       .filter(b => newAoIds.includes(b.accountOfficerId))
+//       .map(b => b.id);
+
+//     setAssignmentForm(prev => ({
+//       ...prev,
+//       accountOfficerEmployeeIds: newAoIds,
+//       selectedBranches: matchingBranchIds,
+//       branchIds: matchingBranchIds,
+//       branchNames: branches.filter(b => matchingBranchIds.includes(b.id)).map(b => b.name)
+//     }));
+//   }}
+//   placeholder="1234, 5678, 9012"
+//   className="w-full px-3 py-2 lg:py-3 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm lg:text-base"
+//   required
+// />
+//   </div>
+// </div>
 //         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
 //           <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200">
 //             <h3 className="text-base lg:text-lg font-bold text-emerald-800 mb-3">Officer 1 *</h3>
-//             <select name="officer1Id" value={assignmentForm.officer1Id} onChange={(e) => handleSelectChange('officer1', e.target.value)} className="w-full px-3 py-2 border border-emerald-300 rounded-lg mb-2 text-sm" required>
-//               <option value="">Select Officer</option>
-//               {assignedOfficers.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-//             </select>
-//             <input type="tel" name="officer1Phone" value={assignmentForm.officer1Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-emerald-300 rounded-lg mb-2 text-sm" />
-//             <select name="officer1Shift" value={assignmentForm.officer1Shift} onChange={handleShiftChange} className="w-full px-3 py-2 border border-emerald-300 rounded-lg text-sm" required>
-//               <option value="">Select Shift</option>
-//               <option value="I">Shift I</option>
-//               <option value="II">Shift II</option>
-//             </select>
+//      <select 
+//   name="officer1Id" 
+//   value={assignmentForm.officer1Id} 
+//   onChange={(e) => handleSelectChange('officer1', e.target.value)}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-emerald-300 rounded-lg mb-2 text-sm" 
+//   required
+// >
+//   <option value="">Select Officer 1</option>
+//  {/* Officer 1 */}
+// {assignedOfficers
+//   .filter(o => 
+//     o.id !== assignmentForm.officer2Id && 
+//     !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id)
+//   )
+//   .map(o => (
+//     <option key={o.id} value={o.id}>{o.name}</option>
+//   ))}
+// </select>
+//  <input type="tel" name="officer1Phone" value={assignmentForm.officer1Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-emerald-300 rounded-lg mb-2 text-sm" />
+//             {/* OFFICER 1 SHIFT — BIDIRECTIONAL */}
+// <select 
+//   name="officer1Shift" 
+//   value={assignmentForm.officer1Shift} 
+//   onChange={handleShiftChange}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-emerald-300 rounded-lg text-sm" 
+//   required
+// >
+//   <option value="">Select Shift</option>
+//   <option value="I" disabled={assignmentForm.officer2Shift === 'I'}>Shift I</option>
+//   <option value="II" disabled={assignmentForm.officer2Shift === 'II'}>Shift II</option>
+// </select>
 //           </div>
 
 //           <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-200">
 //             <h3 className="text-base lg:text-lg font-bold text-teal-800 mb-3">Officer 2 *</h3>
-//             <select name="officer2Id" value={assignmentForm.officer2Id} onChange={(e) => handleSelectChange('officer2', e.target.value)} className="w-full px-3 py-2 border border-teal-300 rounded-lg mb-2 text-sm" required>
-//               <option value="">Select Officer</option>
-//               {assignedOfficers.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-//             </select>
+//             <select 
+//   name="officer2Id" 
+//   value={assignmentForm.officer2Id} 
+//   onChange={(e) => handleSelectChange('officer2', e.target.value)}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-teal-300 rounded-lg mb-2 text-sm" 
+//   required
+// >
+//   <option value="">Select Officer 2</option>
+//   {/* Officer 2 */}
+// {assignedOfficers
+//   .filter(o => 
+//     o.id !== assignmentForm.officer1Id && 
+//     !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id)
+//   )
+//   .map(o => (
+//     <option key={o.id} value={o.id}>{o.name}</option>
+//   ))}
+// </select>
+
 //             <input type="tel" name="officer2Phone" value={assignmentForm.officer2Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-teal-300 rounded-lg mb-2 text-sm" />
-//             <select name="officer2Shift" value={assignmentForm.officer2Shift} onChange={handleShiftChange} className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm" required>
-//               <option value="">Select Shift</option>
-//               <option value="I">Shift I</option>
-//               <option value="II">Shift II</option>
-//             </select>
+//            {/* OFFICER 2 SHIFT — BIDIRECTIONAL */}
+// <select 
+//   name="officer2Shift" 
+//   value={assignmentForm.officer2Shift} 
+//   onChange={handleShiftChange}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm" 
+//   required
+// >
+//   <option value="">Select Shift</option>
+//   <option value="I" disabled={assignmentForm.officer1Shift === 'I'}>Shift I</option>
+//   <option value="II" disabled={assignmentForm.officer1Shift === 'II'}>Shift II</option>
+// </select>
 //           </div>
 //         </div>
 
 //         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-//           <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200">
-//             <h3 className="text-base lg:text-lg font-bold text-purple-800 mb-3">Team Leader 1</h3>
-//             <select name="tl1Id" value={assignmentForm.tl1Id} onChange={(e) => handleSelectChange('tl1', e.target.value)} className="w-full px-3 py-2 border border-purple-300 rounded-lg mb-2 text-sm">
-//               <option value="">Select TL (optional)</option>
-//               {teamLeaders.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-//             </select>
-//             <input type="tel" name="tl1Phone" value={assignmentForm.tl1Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-purple-300 rounded-lg mb-2 text-sm" />
-//             <select name="tl1Shift" value={assignmentForm.tl1Shift} onChange={handleShiftChange} className="w-full px-3 py-2 border border-purple-300 rounded-lg text-sm" disabled={!assignmentForm.tl1Id}>
-//               <option value="">Select Shift</option>
-//               <option value="I">Shift I</option>
-//               <option value="II">Shift II</option>
-//             </select>
-//           </div>
+//   {/* TEAM LEADER 1 */}
+//   <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200">
+//     <h3 className="text-base lg:text-lg font-bold text-purple-800 mb-800 mb-3">Team Leader 1</h3>
+    
+//    <select 
+//   name="tl1Id" 
+//   value={assignmentForm.tl1Id} 
+//   onChange={(e) => handleSelectChange('tl1', e.target.value)}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-purple-300 rounded-lg mb-2 text-sm"
+//   required
+// >
+//   <option value="">Select TL 1</option>
+//   {/* TL1 */}
+// {teamLeaders
+//   .filter(tl => 
+//     tl.id !== assignmentForm.tl2Id &&
+//     !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id)
+//   )
+//   .map(tl => (
+//     <option key={tl.id} value={tl.id}>{tl.name}</option>
+//   ))}
+// </select>
 
-//           <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-200">
-//             <h3 className="text-base lg:text-lg font-bold text-pink-800 mb-3">Team Leader 2</h3>
-//             <select name="tl2Id" value={assignmentForm.tl2Id} onChange={(e) => handleSelectChange('tl2', e.target.value)} className="w-full px-3 py-2 border border-pink-300 rounded-lg mb-2 text-sm">
-//               <option value="">Select TL (optional)</option>
-//               {teamLeaders.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-//             </select>
-//             <input type="tel" name="tl2Phone" value={assignmentForm.tl2Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-pink-300 rounded-lg mb-2 text-sm" />
-//             <select name="tl2Shift" value={assignmentForm.tl2Shift} onChange={handleShiftChange} className="w-full px-3 py-2 border border-pink-300 rounded-lg text-sm" disabled={!assignmentForm.tl2Id}>
-//               <option value="">Select Shift</option>
-//               <option value="I">Shift I</option>
-//               <option value="II">Shift II</option>
-//             </select>
-//           </div>
-//         </div>
+//     <input 
+//       type="tel" 
+//       name="tl1Phone" 
+//       value={assignmentForm.tl1Phone} 
+//       onChange={handlePhoneChange} 
+//       placeholder="Phone (optional override)" 
+//       className="w-full px-3 py-2 border border-purple-300 rounded-lg mb-2 text-sm" 
+//     />
+
+//    {/* TL1 SHIFT — BIDIRECTIONAL */}
+// <select 
+//   name="tl1Shift" 
+//   value={assignmentForm.tl1Shift} 
+//   onChange={handleShiftChange}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-purple-300 rounded-lg text-sm" 
+//   required
+// >
+//   <option value="">Select Shift</option>
+//   <option value="I" disabled={assignmentForm.tl2Shift === 'I'}>Shift I</option>
+//   <option value="II" disabled={assignmentForm.tl2Shift === 'II'}>Shift II</option>
+// </select>
+//   </div>
+
+//   {/* TEAM LEADER 2 */}
+//   <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-200">
+//     <h3 className="text-base lg:text-lg font-bold text-pink-800 mb-3">Team Leader 2</h3>
+    
+//    <select 
+//   name="tl2Id" 
+//   value={assignmentForm.tl2Id} 
+//   onChange={(e) => handleSelectChange('tl2', e.target.value)}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-pink-300 rounded-lg mb-2 text-sm"
+//   required
+// >
+//   <option value="">Select TL 2</option>
+//   {/* TL2 */}
+// {teamLeaders
+//   .filter(tl => 
+//     tl.id !== assignmentForm.tl1Id &&
+//     !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id)
+//   )
+//   .map(tl => (
+//     <option key={tl.id} value={tl.id}>{tl.name}</option>
+//   ))}
+// </select>
+
+//     <input 
+//       type="tel" 
+//       name="tl2Phone" 
+//       value={assignmentForm.tl2Phone} 
+//       onChange={handlePhoneChange} 
+//       placeholder="Phone (optional override)" 
+//       className="w-full px-3 py-2 border border-pink-300 rounded-lg mb-2 text-sm" 
+//     />
+
+//     {/* TL2 SHIFT — BIDIRECTIONAL */}
+// <select 
+//   name="tl2Shift" 
+//   value={assignmentForm.tl2Shift} 
+//   onChange={handleShiftChange}
+//   onMouseDown={(e) => {
+//     if (!dateSelected) {
+//       e.preventDefault();
+//       showDateWarning();
+//     }
+//   }}
+//   disabled={!dateSelected}
+//   className="w-full px-3 py-2 border border-pink-300 rounded-lg text-sm" 
+//   required
+// >
+//   <option value="">Select Shift</option>
+//   <option value="I" disabled={assignmentForm.tl1Shift === 'I'}>Shift I</option>
+//   <option value="II" disabled={assignmentForm.tl1Shift === 'II'}>Shift II</option>
+// </select>
+//   </div>
+// </div>
+
+
 
 //         <button type="submit" className="w-full bg-gradient-to-r from-fuchsia-600 to-rose-600 text-white py-3 lg:py-4 rounded-xl font-bold hover:from-fuchsia-700 hover:to-rose-700 transition-all duration-300 text-sm lg:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
 //           {editingId ? 'Update Assignment' : 'Create Assignment'}
@@ -518,7 +879,7 @@
 //     </div>
 //   );
 
-//   const renderAssignmentsTable = () => (
+//  const renderAssignmentsTable = () => (
 //     <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 lg:p-8 overflow-y-auto border border-fuchsia-200/50 flex-1 min-h-0">
 //       <h2 className="text-2xl lg:text-3xl font-black text-fuchsia-800 mb-6">Current Assignments</h2>
 //       <div className="mt-6 mb-4 flex space-x-4">
@@ -565,8 +926,41 @@
 //             <tbody className="divide-y divide-fuchsia-100">
 //               {assignments.map(a => (
 //                 <tr key={a.id} className="hover:bg-fuchsia-50/50 transition-colors">
-//                   <td className="px-2 py-3 whitespace-nowrap">{a.branchName}</td>
-//                   <td className="px-2 py-3 whitespace-nowrap">{a.accountOfficerEmployeeId}</td>
+//                  {/* BRANCH NAMES — MULTIPLE */}
+// <td className="px-2 py-3">
+//   <div className="flex flex-wrap gap-1">
+//     {Array.isArray(a.branchNames) 
+//       ? a.branchNames.map((name, i) => (
+//           <span key={i} className="px-2 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
+//             {name.trim() || '—'}
+//           </span>
+//         ))
+//       : (a.branchNames || a.branchName || '').split(',').map((name, i) => (
+//           <span key={i} className="px-2 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
+//             {name.trim() || '—'}
+//           </span>
+//         ))
+//     }
+//   </div>
+// </td>
+
+// {/* AO IDs — MULTIPLE */}
+// <td className="px-2 py-3">
+//   <div className="flex flex-wrap gap-1">
+//     {Array.isArray(a.accountOfficerEmployeeIds)
+//       ? a.accountOfficerEmployeeIds.map((id, i) => (
+//           <span key={i} className="px-2 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
+//             {id.trim() || '—'}
+//           </span>
+//         ))
+//       : (a.accountOfficerEmployeeIds || a.accountOfficerEmployeeId || '').split(',').map((id, i) => (
+//           <span key={i} className="px-2 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
+//             {id.trim() || '—'}
+//           </span>
+//         ))
+//     }
+//   </div>
+// </td>
 //                   <td className="px-2 py-3 whitespace-nowrap">{a.officer1?.name || '-'}</td>
 //                   <td className="px-2 py-3 whitespace-nowrap">{a.officer1Phone || a.officer1?.phone || '-'}</td>
 //                   <td className="px-2 py-3 whitespace-nowrap">{getShiftLabel(a.officer1Shift)}</td>
@@ -605,7 +999,7 @@
 //   );
 
 //   const renderEditModal = () => showEditModal && (
-//     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+//     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 mt-4">
 //       <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
 //         <div className="flex justify-between items-center mb-4">
 //           <h3 className="text-xl font-bold text-gray-900">Edit Assignment</h3>
@@ -716,16 +1110,10 @@
 
 //         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 lg:py-6 overflow-hidden min-h-0">
 //           {error && <div className="text-red-600 text-center mb-4 p-4 bg-red-50 rounded-lg">{error}</div>}
-//           {canEdit ? (
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-//               {renderAssignmentForm()}
-//               {renderAssignmentsTable()}
-//             </div>
-//           ) : (
-//             <div className="grid grid-cols-1 gap-4 lg:gap-6">
-//               {renderAssignmentsTable()}
-//             </div>
-//           )}
+//           {/* ONLY SHOW ASSIGNMENTS TABLE IF NOT IN EDIT MODE FROM CURRENT ASSIGNMENTS PAGE */}
+// <div className="grid grid-cols-1 gap-4 lg:gap-6">
+//   {renderAssignmentForm()}
+// </div>
 //           {renderEditModal()}
 //           {renderViewModal()}
 //         </main>
@@ -739,19 +1127,19 @@
 //           33% { transform: translate(30px, -50px) scale(1.1); }
 //           66% { transform: translate(-20px, 20px) scale(0.9); }
 //           100% { transform: translate(0px, 0px) scale(1); }
-//         }
-//         .animate-blob { animation: blob 7s infinite; }
-//         .animation-delay-2000 { animation-delay: 2s; }
-//         .animation-delay-4000 { animation-delay: 4s; }
-//       `}</style>
-//     </div>
+// //         }
+// //         .animate-blob { animation: blob 7s infinite; }
+// //         .animation-delay-2000 { animation-delay: 2s; }
+// //         .animation-delay-4000 { animation-delay: 4s; }
+// //       `}</style>
+// //     </div>
 //   );
 // };
 
 // export default DailyAssignmentPage;
 
 
-// DailyAssignmentPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -810,6 +1198,13 @@ const DailyAssignmentPage = () => {
 const [assignmentsOnSelectedDate, setAssignmentsOnSelectedDate] = useState([]);
 const [dateSelected, setDateSelected] = useState(false);
 const location = useLocation();
+const [openDropdown, setOpenDropdown] = useState(null);
+const [search, setSearch] = useState({
+  officer1: '',
+  officer2: '',
+  tl1: '',
+  tl2: ''
+});
 // Auto-load assignment if coming from Current Assignments
  useEffect(() => {
   if (location.state?.editAssignment) {
@@ -1392,31 +1787,74 @@ console.log("Sending to backend:", {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
           <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200">
             <h3 className="text-base lg:text-lg font-bold text-emerald-800 mb-3">Officer 1 *</h3>
-     <select 
-  name="officer1Id" 
-  value={assignmentForm.officer1Id} 
-  onChange={(e) => handleSelectChange('officer1', e.target.value)}
-  onMouseDown={(e) => {
-    if (!dateSelected) {
-      e.preventDefault();
-      showDateWarning();
-    }
-  }}
+     <div className="relative">
+  <button
+  type="button"
+  onClick={() => setOpenDropdown(openDropdown === 'officer1' ? null : 'officer1')}
   disabled={!dateSelected}
-  className="w-full px-3 py-2 border border-emerald-300 rounded-lg mb-2 text-sm" 
-  required
+  className="w-full px-3 py-2 border-1  border-emerald-300 rounded-lg bg-green-50 text-sm text-left mb-2
+             disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
+             flex justify-between items-center "
 >
-  <option value="">Select Officer 1</option>
- {/* Officer 1 */}
-{assignedOfficers
-  .filter(o => 
-    o.id !== assignmentForm.officer2Id && 
-    !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id)
-  )
-  .map(o => (
-    <option key={o.id} value={o.id}>{o.name}</option>
-  ))}
-</select>
+  <span className="truncate">
+    {assignmentForm.officer1Id
+      ? assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name
+      : 'Select Officer 1'}
+  </span>
+  <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+  </svg>
+</button>
+
+
+  {openDropdown === 'officer1' && (
+    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden ">
+      <input
+        type="text"
+        placeholder="Search by name or ID..."
+        value={search.officer1}
+        onChange={(e) => setSearch({...search, officer1: e.target.value})}
+        className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
+        autoFocus
+      />
+      <div className="max-h-60 overflow-y-auto">
+        {assignedOfficers
+          .filter(o => 
+            o.id !== assignmentForm.officer2Id && 
+            !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
+            (o.name.toLowerCase().includes(search.officer1.toLowerCase()) || 
+             (o.employeeId && o.employeeId.toLowerCase().includes(search.officer1.toLowerCase())))
+          )
+          .map(o => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => {
+                handleSelectChange('officer1', o.id);
+                setOpenDropdown(null);
+                setSearch({...search, officer1: ''});
+              }}
+              className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+            >
+              <span className="font-medium text-gray-500">{o.name}</span>
+              <span className="text-gray-500 text-xs">({o.employeeId || 'No ID'})</span>
+            </button>
+          ))}
+        {assignedOfficers
+          .filter(o => 
+            o.id !== assignmentForm.officer2Id && 
+            !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
+            (o.name.toLowerCase().includes(search.officer1.toLowerCase()) || 
+             (o.employeeId && o.employeeId.toLowerCase().includes(search.officer1.toLowerCase())))
+          ).length === 0 && (
+          <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
+            No officers found
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
  <input type="tel" name="officer1Phone" value={assignmentForm.officer1Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-emerald-300 rounded-lg mb-2 text-sm" />
             {/* OFFICER 1 SHIFT — BIDIRECTIONAL */}
 <select 
@@ -1441,31 +1879,73 @@ console.log("Sending to backend:", {
 
           <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-200">
             <h3 className="text-base lg:text-lg font-bold text-teal-800 mb-3">Officer 2 *</h3>
-            <select 
-  name="officer2Id" 
-  value={assignmentForm.officer2Id} 
-  onChange={(e) => handleSelectChange('officer2', e.target.value)}
-  onMouseDown={(e) => {
-    if (!dateSelected) {
-      e.preventDefault();
-      showDateWarning();
-    }
-  }}
-  disabled={!dateSelected}
-  className="w-full px-3 py-2 border border-teal-300 rounded-lg mb-2 text-sm" 
-  required
->
-  <option value="">Select Officer 2</option>
-  {/* Officer 2 */}
-{assignedOfficers
-  .filter(o => 
-    o.id !== assignmentForm.officer1Id && 
-    !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id)
-  )
-  .map(o => (
-    <option key={o.id} value={o.id}>{o.name}</option>
-  ))}
-</select>
+            <div className="relative">
+  <button
+    type="button"
+    onClick={() => setOpenDropdown(openDropdown === 'officer2' ? null : 'officer2')}
+    disabled={!dateSelected}
+    className="w-full px-3 py-2 border-1 border-emerald-300 rounded-lg bg-green-50 text-sm text-left mb-2
+               disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
+               flex justify-between items-center"
+  >
+    <span className="truncate">
+      {assignmentForm.officer2Id
+        ? assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name
+        : 'Select Officer 2'}
+    </span>
+    <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  {openDropdown === 'officer2' && (
+    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+      <input
+        type="text"
+        placeholder="Search by name or ID..."
+        value={search.officer2}
+        onChange={(e) => setSearch({...search, officer2: e.target.value})}
+        className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
+        autoFocus
+      />
+      <div className="max-h-60 overflow-y-auto">
+        {assignedOfficers
+          .filter(o => 
+            o.id !== assignmentForm.officer1Id && 
+            !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
+            (o.name.toLowerCase().includes(search.officer2.toLowerCase()) || 
+             (o.employeeId && o.employeeId.toLowerCase().includes(search.officer2.toLowerCase())))
+          )
+          .map(o => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => {
+                handleSelectChange('officer2', o.id);
+                setOpenDropdown(null);
+                setSearch({...search, officer2: ''});
+              }}
+              className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+            >
+              <span className="font-medium text-gray-500">{o.name}</span>
+              <span className="text-gray-500 text-xs">({o.employeeId || 'No ID'})</span>
+            </button>
+          ))}
+        {assignedOfficers
+          .filter(o => 
+            o.id !== assignmentForm.officer1Id && 
+            !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
+            (o.name.toLowerCase().includes(search.officer2.toLowerCase()) || 
+             (o.employeeId && o.employeeId.toLowerCase().includes(search.officer2.toLowerCase())))
+          ).length === 0 && (
+          <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
+            No officers found
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
 
             <input type="tel" name="officer2Phone" value={assignmentForm.officer2Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-teal-300 rounded-lg mb-2 text-sm" />
            {/* OFFICER 2 SHIFT — BIDIRECTIONAL */}
@@ -1495,31 +1975,73 @@ console.log("Sending to backend:", {
   <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200">
     <h3 className="text-base lg:text-lg font-bold text-purple-800 mb-800 mb-3">Team Leader 1</h3>
     
-   <select 
-  name="tl1Id" 
-  value={assignmentForm.tl1Id} 
-  onChange={(e) => handleSelectChange('tl1', e.target.value)}
-  onMouseDown={(e) => {
-    if (!dateSelected) {
-      e.preventDefault();
-      showDateWarning();
-    }
-  }}
-  disabled={!dateSelected}
-  className="w-full px-3 py-2 border border-purple-300 rounded-lg mb-2 text-sm"
-  required
->
-  <option value="">Select TL 1</option>
-  {/* TL1 */}
-{teamLeaders
-  .filter(tl => 
-    tl.id !== assignmentForm.tl2Id &&
-    !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id)
-  )
-  .map(tl => (
-    <option key={tl.id} value={tl.id}>{tl.name}</option>
-  ))}
-</select>
+   <div className="relative">
+  <button
+    type="button"
+    onClick={() => setOpenDropdown(openDropdown === 'tl1' ? null : 'tl1')}
+    disabled={!dateSelected}
+    className="w-full px-3 py-2 border-1 border-purple-300 rounded-lg bg-purple-50 text-sm text-left mb-2
+               disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
+               flex justify-between items-center"
+  >
+    <span className="truncate">
+      {assignmentForm.tl1Id
+        ? teamLeaders.find(tl => tl.id === assignmentForm.tl1Id)?.name
+        : 'Select Team Leader 1'}
+    </span>
+    <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  {openDropdown === 'tl1' && (
+    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+      <input
+        type="text"
+        placeholder="Search by name or ID..."
+        value={search.tl1}
+        onChange={(e) => setSearch({...search, tl1: e.target.value})}
+        className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
+        autoFocus
+      />
+      <div className="max-h-60 overflow-y-auto">
+        {teamLeaders
+          .filter(tl => 
+            tl.id !== assignmentForm.tl2Id && 
+            !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
+            (tl.name.toLowerCase().includes(search.tl1.toLowerCase()) || 
+             (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl1.toLowerCase())))
+          )
+          .map(tl => (
+            <button
+              key={tl.id}
+              type="button"
+              onClick={() => {
+                handleSelectChange('tl1', tl.id);
+                setOpenDropdown(null);
+                setSearch({...search, tl1: ''});
+              }}
+              className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+            >
+              <span className="font-medium text-gray-500">{tl.name}</span>
+              <span className="text-gray-500 text-xs">({tl.employeeId || 'No ID'})</span>
+            </button>
+          ))}
+        {teamLeaders
+          .filter(tl => 
+            tl.id !== assignmentForm.tl2Id && 
+            !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
+            (tl.name.toLowerCase().includes(search.tl1.toLowerCase()) || 
+             (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl1.toLowerCase())))
+          ).length === 0 && (
+          <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
+            No team leaders found
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
 
     <input 
       type="tel" 
@@ -1555,31 +2077,73 @@ console.log("Sending to backend:", {
   <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-200">
     <h3 className="text-base lg:text-lg font-bold text-pink-800 mb-3">Team Leader 2</h3>
     
-   <select 
-  name="tl2Id" 
-  value={assignmentForm.tl2Id} 
-  onChange={(e) => handleSelectChange('tl2', e.target.value)}
-  onMouseDown={(e) => {
-    if (!dateSelected) {
-      e.preventDefault();
-      showDateWarning();
-    }
-  }}
-  disabled={!dateSelected}
-  className="w-full px-3 py-2 border border-pink-300 rounded-lg mb-2 text-sm"
-  required
->
-  <option value="">Select TL 2</option>
-  {/* TL2 */}
-{teamLeaders
-  .filter(tl => 
-    tl.id !== assignmentForm.tl1Id &&
-    !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id)
-  )
-  .map(tl => (
-    <option key={tl.id} value={tl.id}>{tl.name}</option>
-  ))}
-</select>
+   <div className="relative">
+  <button
+    type="button"
+    onClick={() => setOpenDropdown(openDropdown === 'tl2' ? null : 'tl2')}
+    disabled={!dateSelected}
+    className="w-full px-3 py-2 border-1 border-pink-300 rounded-lg bg-pink-50 text-sm text-left mb-2
+               disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
+               flex justify-between items-center"
+  >
+    <span className="truncate">
+      {assignmentForm.tl2Id
+        ? teamLeaders.find(tl => tl.id === assignmentForm.tl2Id)?.name
+        : 'Select Team Leader 2'}
+    </span>
+    <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  {openDropdown === 'tl2' && (
+    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+      <input
+        type="text"
+        placeholder="Search by name or ID..."
+        value={search.tl2}
+        onChange={(e) => setSearch({...search, tl2: e.target.value})}
+        className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
+        autoFocus
+      />
+      <div className="max-h-60 overflow-y-auto">
+        {teamLeaders
+          .filter(tl => 
+            tl.id !== assignmentForm.tl1Id && 
+            !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
+            (tl.name.toLowerCase().includes(search.tl2.toLowerCase()) || 
+             (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl2.toLowerCase())))
+          )
+          .map(tl => (
+            <button
+              key={tl.id}
+              type="button"
+              onClick={() => {
+                handleSelectChange('tl2', tl.id);
+                setOpenDropdown(null);
+                setSearch({...search, tl2: ''});
+              }}
+              className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+            >
+              <span className="font-medium text-gray-500">{tl.name}</span>
+              <span className="text-gray-500 text-xs">({tl.employeeId || 'No ID'})</span>
+            </button>
+          ))}
+        {teamLeaders
+          .filter(tl => 
+            tl.id !== assignmentForm.tl1Id && 
+            !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
+            (tl.name.toLowerCase().includes(search.tl2.toLowerCase()) || 
+             (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl2.toLowerCase())))
+          ).length === 0 && (
+          <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
+            No team leaders found
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
 
     <input 
       type="tel" 
@@ -1880,12 +2444,14 @@ console.log("Sending to backend:", {
           33% { transform: translate(30px, -50px) scale(1.1); }
           66% { transform: translate(-20px, 20px) scale(0.9); }
           100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-      `}</style>
-    </div>
+//         }
+//         .animate-blob { animation: blob 7s infinite; }
+//         .animation-delay-2000 { animation-delay: 2s; }
+//         .animation-delay-4000 { animation-delay: 4s; }
+//       `}</style>
+
+
+ </div>
   );
 };
 

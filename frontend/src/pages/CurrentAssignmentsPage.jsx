@@ -296,7 +296,7 @@ const renderViewModal = () => showViewModal && viewingAssignment && (
                     <tr key={a.id} className="hover:bg-fuchsia-50/50">
                       {/* BRANCH NAMES */}
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-col gap-1">
                           {Array.isArray(a.branchNames)
                             ? a.branchNames.map((n, i) => (
                                 <span key={i} className="px-2 py-1 bg-fuchsia-100 text-fuchsia-800 rounded-full text-xs font-medium">
@@ -313,7 +313,7 @@ const renderViewModal = () => showViewModal && viewingAssignment && (
 
                       {/* AO IDs */}
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-col gap-1">
                           {Array.isArray(a.accountOfficerEmployeeIds)
                             ? a.accountOfficerEmployeeIds.map((id, i) => (
                                 <span key={i} className="px-2 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-medium">
