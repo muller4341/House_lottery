@@ -246,14 +246,14 @@ const renderViewModal = () => showViewModal && viewingAssignment && (
          <div className="flex gap-4 mb-6 justify-center">
           <button
             onClick={() => handleExport('excel')}
-            className="px-6 py-3 bg-green-600 text-green-600 rounded-xl font-bold flex items-center gap-2 shadow-lg"
+            className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg"
           >
             <ArrowDownTrayIcon className="h-5 w-5" />
             Export Excel
           </button>
           <button
             onClick={() => handleExport('csv')}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-blue-700 rounded-xl font-bold flex items-center gap-2 shadow-lg"
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg"
           >
             <ArrowDownTrayIcon className="h-5 w-5" />
             Export CSV
