@@ -81,6 +81,82 @@ export const createBranch = async (req, res) => {
   }
 };
 
+// export const bulkCreateBranches = async (req, res) => {
+//   try {
+//     const branchesData = req.body; // Array of {name, accountOfficerId}
+//     const userId = req.user?.id;
+
+//     if (!Array.isArray(branchesData) || branchesData.length === 0) {
+//       return res.status(400).json({ error: 'Request body must be a non-empty array of branch objects' });
+//     }
+
+//     const validBranches = [];
+//     const errors = [];
+
+//     for (const [index, item] of branchesData.entries()) {
+//       const { name, accountOfficerId } = item;
+//       if (!name || !accountOfficerId) {
+//         errors.push(`Row ${index + 1}: Missing name or accountOfficerId`);
+//         continue;
+//       }
+//       const aoIdStr = String(accountOfficerId).trim();
+//       if (!/^\d{4}$/.test(aoIdStr)) {
+//         errors.push(`Row ${index + 1}: Invalid accountOfficerId (must be 4 digits)`);
+//         continue;
+//       }
+//       validBranches.push({ name: String(name).trim(), accountOfficerId: aoIdStr });
+//     }
+
+//     if (validBranches.length === 0) {
+//       return res.status(400).json({ error: 'No valid branches to create. Errors: ' + errors.join(', ') });
+//     }
+
+//     // Check for existing AO IDs (ensure strings)
+//     const aoIds = validBranches.map(b => b.accountOfficerId);
+//     const existing = await prisma.branch.findMany({ where: { accountOfficerId: { in: aoIds } } });
+//     const existingIds = new Set(existing.map(b => b.accountOfficerId));
+//     const duplicateErrors = validBranches.filter(b => existingIds.has(b.accountOfficerId)).map(b => `Account Officer ID ${b.accountOfficerId} already exists`);
+//     if (duplicateErrors.length > 0) {
+//       return res.status(409).json({ error: 'Duplicates found: ' + duplicateErrors.join(', ') });
+//     }
+
+//     // Create in transaction
+//     const createdBranches = await prisma.$transaction(async (tx) => {
+//       const created = [];
+//       for (const branchData of validBranches) {
+//         const newBranch = await tx.branch.create({
+//           data: branchData,
+//           select: {
+//             id: true,
+//             name: true,
+//             accountOfficerId: true,
+//             createdAt: true
+//           }
+//         });
+//         created.push(newBranch);
+
+//         // Audit log per branch
+//         if (userId) {
+//           await tx.auditLog.create({
+//             data: {
+//               action: 'CREATE_BRANCH_BULK',
+//               details: JSON.stringify(branchData),
+//               userId,
+//               entityId: newBranch.id
+//             }
+//           });
+//         }
+//       }
+//       return created;
+//     });
+
+//     res.status(201).json(createdBranches);
+//   } catch (error) {
+//     console.error('Error bulk creating branches:', error);
+//     res.status(500).json({ error: 'Failed to bulk create branches' });
+//   }
+// };
+
 export const bulkCreateBranches = async (req, res) => {
   try {
     const branchesData = req.body; // Array of {name, accountOfficerId}
@@ -111,52 +187,74 @@ export const bulkCreateBranches = async (req, res) => {
       return res.status(400).json({ error: 'No valid branches to create. Errors: ' + errors.join(', ') });
     }
 
-    // Check for existing AO IDs (ensure strings)
-    const aoIds = validBranches.map(b => b.accountOfficerId);
-    const existing = await prisma.branch.findMany({ where: { accountOfficerId: { in: aoIds } } });
-    const existingIds = new Set(existing.map(b => b.accountOfficerId));
-    const duplicateErrors = validBranches.filter(b => existingIds.has(b.accountOfficerId)).map(b => `Account Officer ID ${b.accountOfficerId} already exists`);
-    if (duplicateErrors.length > 0) {
-      return res.status(409).json({ error: 'Duplicates found: ' + duplicateErrors.join(', ') });
-    }
-
-    // Create in transaction
-    const createdBranches = await prisma.$transaction(async (tx) => {
+    // UPSERT: Create new or update existing by accountOfficerId
+    const results = await prisma.$transaction(async (tx) => {
       const created = [];
-      for (const branchData of validBranches) {
-        const newBranch = await tx.branch.create({
-          data: branchData,
-          select: {
-            id: true,
-            name: true,
-            accountOfficerId: true,
-            createdAt: true
-          }
-        });
-        created.push(newBranch);
+      const updated = [];
 
-        // Audit log per branch
-        if (userId) {
-          await tx.auditLog.create({
-            data: {
-              action: 'CREATE_BRANCH_BULK',
-              details: JSON.stringify(branchData),
-              userId,
-              entityId: newBranch.id
+      for (const branchData of validBranches) {
+        const existing = await tx.branch.findUnique({
+          where: { accountOfficerId: branchData.accountOfficerId }
+        });
+
+        if (existing) {
+          // Update name if different
+          if (existing.name !== branchData.name) {
+            const updatedBranch = await tx.branch.update({
+              where: { accountOfficerId: branchData.accountOfficerId },
+              data: { name: branchData.name },
+              select: { id: true, name: true, accountOfficerId: true, createdAt: true }
+            });
+            updated.push(updatedBranch);
+
+            // Audit log
+            if (userId) {
+              await tx.auditLog.create({
+                data: {
+                  action: 'UPDATE_BRANCH_BULK',
+                  details: JSON.stringify({ old: existing.name, new: branchData.name }),
+                  userId,
+                  entityId: updatedBranch.id
+                }
+              });
             }
+          }
+        } else {
+          // Create new
+          const newBranch = await tx.branch.create({
+            data: branchData,
+            select: { id: true, name: true, accountOfficerId: true, createdAt: true }
           });
+          created.push(newBranch);
+
+          // Audit log
+          if (userId) {
+            await tx.auditLog.create({
+              data: {
+                action: 'CREATE_BRANCH_BULK',
+                details: JSON.stringify(branchData),
+                userId,
+                entityId: newBranch.id
+              }
+            });
+          }
         }
       }
-      return created;
+
+      return { created, updated };
     });
 
-    res.status(201).json(createdBranches);
+    const total = results.created.length + results.updated.length;
+    res.status(200).json({
+      message: `${total} branches processed (${results.created.length} created, ${results.updated.length} updated)`,
+      created: results.created,
+      updated: results.updated
+    });
   } catch (error) {
-    console.error('Error bulk creating branches:', error);
-    res.status(500).json({ error: 'Failed to bulk create branches' });
+    console.error('Error bulk creating/updating branches:', error);
+    res.status(500).json({ error: 'Failed to bulk upload branches' });
   }
 };
-
 export const updateBranch = async (req, res) => {
   try {
     const { id } = req.params;
