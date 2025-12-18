@@ -20,7 +20,7 @@ const Footer = () => {
           </p>
 
           <p className="text-xs text-amber-500 font-medium tracking-wider">
-            Powered by CBE CKYC Solutions. 
+            Powered by CBE CKYC Solutions.
           </p>
 
           <div className="flex justify-center items-center gap-4 border-t border-amber-500 pt-4">
