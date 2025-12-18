@@ -2,7 +2,7 @@
 import React from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { Outlet } from 'react-router-dom';  
+import { Outlet } from 'react-router-dom';
 
 const Layout = () => {
   return (
@@ -11,7 +11,7 @@ const Layout = () => {
       <Navbar />
 
       {/* Main Content — pushes below navbar */}
-      <main className="flex-1 pt-20 lg:pt-24">
+      <main className="flex-1 ">
         <Outlet />  {/* This shows Dashboard, AssignmentView, etc. */}
       </main>
 

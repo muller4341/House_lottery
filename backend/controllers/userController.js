@@ -2,7 +2,7 @@
 
 import { prisma } from '../utils/prismaClient.js'
 
-export const getUsers = async (req, res) => {
+export const getActiveUsers = async (req, res) => {
   try {
     const { role } = req.query;
     const whereClause = {
@@ -21,6 +21,43 @@ export const getUsers = async (req, res) => {
       },
       orderBy: { name: 'asc' }
     });
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+export const getUsers = async (req, res) => {
+  try {
+    const { role } = req.query;
+
+    const whereClause = {
+      // No status filter → show ALL users (active + deactivated)
+      ...(role && { role }) // only apply role filter if it was sent
+    };
+
+    // Only allow these 3 roles (extra safety)
+    const allowedRoles = ['OFFICER', 'TEAM_LEADER', 'CENTRAL_KYC_MANAGER'];
+
+    const users = await prisma.user.findMany({
+      where: {
+        ...whereClause,
+        // Optional: enforce only allowed roles (prevents junk data)
+        role: { in: allowedRoles }
+      },
+      select: {
+        id: true,
+        employeeId: true,
+        name: true,
+        role: true,
+        phone: true,
+        createdAt: true,
+        status: true // ← add this so frontend can see it
+      },
+      orderBy: { name: 'asc' }
+    });
+
     res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -138,7 +175,62 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// Soft Delete → Toggle status (0 <-> 1)
+// // Soft Delete → Toggle status (0 <-> 1)
+// export const deleteUser = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const userId = req.user?.id;
+
+//     const targetUser = await prisma.user.findUnique({
+//       where: { id },
+//       select: { status: true, name: true }
+//     });
+
+//     if (!targetUser) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
+
+//     // Prevent deletion if user has assignments
+//     const assignmentCount = await prisma.assignment.count({
+//       where: {
+//         OR: [
+//           { officer1Id: id },
+//           { officer2Id: id },
+//           { tl1Id: id },
+//           { tl2Id: id }
+//         ]
+//       }
+//     });
+
+//     if (assignmentCount > 0) {
+//       return res.status(400).json({ error: 'Cannot delete user with existing assignments' });
+//     }
+
+//     const newStatus = targetUser.status === 0 ? 1 : 0;
+//     await prisma.user.update({
+//       where: { id },
+//       data: { status: newStatus }
+//     });
+
+//     const action = newStatus === 1 ? 'DEACTIVATE_USER' : 'REACTIVATE_USER';
+
+//     if (userId) {
+//       await prisma.auditLog.create({
+//         data: {
+//           action,
+//           details: JSON.stringify({ name: targetUser.name, newStatus }),
+//           userId,
+//           entityId: id
+//         }
+//       });
+//     }
+
+//     res.json({ message: 'User status updated successfully' });
+//   } catch (error) {
+//     console.error('Error toggling user status:', error);
+//     res.status(500).json({ error: 'Failed to update user status' });
+//   }
+// };
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -153,9 +245,13 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Prevent deletion if user has assignments
-    const assignmentCount = await prisma.assignment.count({
+    // NEW: Only block if user has assignments TODAY or in the FUTURE
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const hasUpcomingAssignment = await prisma.assignment.count({
       where: {
+        date: { gte: today },
         OR: [
           { officer1Id: id },
           { officer2Id: id },
@@ -163,12 +259,15 @@ export const deleteUser = async (req, res) => {
           { tl2Id: id }
         ]
       }
-    });
+    }) > 0;
 
-    if (assignmentCount > 0) {
-      return res.status(400).json({ error: 'Cannot delete user with existing assignments' });
+    if (hasUpcomingAssignment) {
+      return res.status(400).json({ 
+        error: 'Cannot deactivate user with active or upcoming assignments (today or future dates)' 
+      });
     }
 
+    // If no upcoming assignments → safe to toggle status
     const newStatus = targetUser.status === 0 ? 1 : 0;
     await prisma.user.update({
       where: { id },
@@ -194,7 +293,6 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to update user status' });
   }
 };
-
 // // GET CURRENT LOGGED-IN USER — /api/user/me
 // export const getCurrentUser = async (req, res) => {
 //   try {

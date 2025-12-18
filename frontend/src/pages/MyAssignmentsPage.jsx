@@ -39,7 +39,7 @@
 //         setLoading(false);
 //       }
 //     };
-    
+
 //     if (user) fetchMyAssignments();
 //   }, [user]);
 //   console.log("user to this ",user)
@@ -176,10 +176,10 @@ import { CalendarIcon, ClockIcon, CalendarDaysIcon, ArchiveBoxIcon, ArrowLeftIco
 import { useNavigate } from 'react-router-dom';
 
 const formatDate = (dateStr) => {
-  return new Intl.DateTimeFormat('en-GB', { 
-    day: '2-digit', 
-    month: 'short', 
-    year: 'numeric' 
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
   }).format(new Date(dateStr));
 };
 
@@ -208,7 +208,7 @@ const MyAssignmentsPage = () => {
   }, [user]);
 
   const toDateOnly = (dateStr) => dateStr ? dateStr.split('T')[0] : '';
-  
+
   const today = toDateOnly(new Date().toISOString());
   const now = new Date();
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -220,46 +220,46 @@ const MyAssignmentsPage = () => {
 
   // Group assignments by date + shift + role
   const groupedAssignments = assignments
-  .filter(a => [a.officer1Id, a.officer2Id, a.tl1Id, a.tl2Id].includes(user?.id))
-  .reduce((acc, a) => {
-    const date = toDateOnly(a.date);
+    .filter(a => [a.officer1Id, a.officer2Id, a.tl1Id, a.tl2Id].includes(user?.id))
+    .reduce((acc, a) => {
+      const date = toDateOnly(a.date);
 
-    const { role, shift } = (() => {
-      if (a.officer1Id === user.id) return { role: 'Officer 1', shift: a.officer1Shift };
-      if (a.officer2Id === user.id) return { role: 'Officer 2', shift: a.officer2Shift };
-      if (a.tl1Id === user.id) return { role: 'Team Leader 1', shift: a.tl1Shift || 'N/A' };
-      if (a.tl2Id === user.id) return { role: 'Team Leader 2', shift: a.tl2Shift || 'N/A' };
-      return { role: '', shift: '' };
-    })();
+      const { role, shift } = (() => {
+        if (a.officer1Id === user.id) return { role: 'Officer 1', shift: a.officer1Shift };
+        if (a.officer2Id === user.id) return { role: 'Officer 2', shift: a.officer2Shift };
+        if (a.tl1Id === user.id) return { role: 'Team Leader 1', shift: a.tl1Shift || 'N/A' };
+        if (a.tl2Id === user.id) return { role: 'Team Leader 2', shift: a.tl2Shift || 'N/A' };
+        return { role: '', shift: '' };
+      })();
 
-    if (!role) return acc;
+      if (!role) return acc;
 
-    const key = `${date}-${shift}-${role}`;
-    if (!acc[key]) {
-      acc[key] = { date, role, shift, branches: [], aoIds: [] };
-    }
+      const key = `${date}-${shift}-${role}`;
+      if (!acc[key]) {
+        acc[key] = { date, role, shift, branches: [], aoIds: [] };
+      }
 
-    // HANDLE branchNames — array or string
-    const branchNames = Array.isArray(a.branchNames)
-      ? a.branchNames
-      : a.branchNames ? a.branchNames.split(',').map(n => n.trim()) : [a.branchName || '—'];
+      // HANDLE branchNames — array or string
+      const branchNames = Array.isArray(a.branchNames)
+        ? a.branchNames
+        : a.branchNames ? a.branchNames.split(',').map(n => n.trim()) : [a.branchName || '—'];
 
-    // HANDLE accountOfficerEmployeeIds — array or string
-    const aoIds = Array.isArray(a.accountOfficerEmployeeIds)
-      ? a.accountOfficerEmployeeIds
-      : a.accountOfficerEmployeeIds ? a.accountOfficerEmployeeIds.split(',').map(id => id.trim()) : [a.accountOfficerEmployeeId || '—'];
+      // HANDLE accountOfficerEmployeeIds — array or string
+      const aoIds = Array.isArray(a.accountOfficerEmployeeIds)
+        ? a.accountOfficerEmployeeIds
+        : a.accountOfficerEmployeeIds ? a.accountOfficerEmployeeIds.split(',').map(id => id.trim()) : [a.accountOfficerEmployeeId || '—'];
 
-    acc[key].branches.push(...branchNames);
-    acc[key].aoIds.push(...aoIds);
+      acc[key].branches.push(...branchNames);
+      acc[key].aoIds.push(...aoIds);
 
-    return acc;
-  }, {});
+      return acc;
+    }, {});
 
   const groupedList = Object.values(groupedAssignments).map(item => ({
-  ...item,
-  branches: [...new Set(item.branches.filter(Boolean))],
-  aoIds: [...new Set(item.aoIds.filter(Boolean))]
-}));
+    ...item,
+    branches: [...new Set(item.branches.filter(Boolean))],
+    aoIds: [...new Set(item.aoIds.filter(Boolean))]
+  }));
 
   const filteredAssignments = groupedList
     .filter(a => {
@@ -281,7 +281,7 @@ const MyAssignmentsPage = () => {
     );
   }
 
-   const handleBack = () => {
+  const handleBack = () => {
     navigate('/dashboard');
   };
   return (
@@ -292,24 +292,24 @@ const MyAssignmentsPage = () => {
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-       <header className="bg-white/95 backdrop-blur-2xl border-b border-fuchsia-800/20 shadow-sm z-20 w-full flex-shrink-0">
-                 <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 flex justify-start">
-                   
-         <div className="flex justify-start py-4 lg:py-6">
-           {user?.role !== 'USER' && (
-           <button 
-                onClick={handleBack} 
-                className="flex items-center space-x-2 text-fuchsia-800 hover:text-fuchsia-600 font-semibold transition-all duration-300 hover:scale-105"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-                <span>Back to Dashboard</span>
-              </button>
-           )}
-         </div>
-       
-                 </div>
-               </header>
-       
+        <header className="bg-white/95 backdrop-blur-2xl border-b border-fuchsia-800/20 shadow-sm z-20 w-full flex-shrink-0">
+          <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 flex justify-start">
+
+            <div className="flex justify-start py-4 lg:py-6">
+              {user?.role !== 'USER' && (
+                <button
+                  onClick={handleBack}
+                  className="flex items-center space-x-2 text-fuchsia-800 hover:text-fuchsia-600 font-semibold transition-all duration-300 hover:scale-105"
+                >
+                  <ArrowLeftIcon className="h-5 w-5" />
+                  <span>Back to Dashboard</span>
+                </button>
+              )}
+            </div>
+
+          </div>
+        </header>
+
 
         {/* Filter Tabs */}
         <div className="flex md:flex-row md:gap-64 mb-8 mt-6 flex-col gap-6 ">
@@ -319,34 +319,34 @@ const MyAssignmentsPage = () => {
             </h2>
           </div>
           <div className="flex flex-wrap justify-center gap-3 ">
-          {[
-            { key: 'today', label: 'Today', icon: CalendarIcon, color: 'emerald' },
-            { key: 'week', label: 'This Week', icon: ClockIcon, color: 'blue' },
-            { key: 'month', label: 'This Month', icon: CalendarDaysIcon, color: 'violet' },
-            { key: 'all', label: 'All Time', icon: ArchiveBoxIcon, color: 'rose' },
-          ].map(({ key, label, icon: Icon, color }) => {
-            const count = groupedList.filter(a => {
-              if (key === 'today') return a.date === today;
-              if (key === 'week') return a.date >= weekStartStr && a.date <= today;
-              if (key === 'month') return a.date >= monthStartStr;
-              return true;
-            }).length;
+            {[
+              { key: 'today', label: 'Today', icon: CalendarIcon, color: 'emerald' },
+              { key: 'week', label: 'This Week', icon: ClockIcon, color: 'blue' },
+              { key: 'month', label: 'This Month', icon: CalendarDaysIcon, color: 'violet' },
+              { key: 'all', label: 'All Time', icon: ArchiveBoxIcon, color: 'rose' },
+            ].map(({ key, label, icon: Icon, color }) => {
+              const count = groupedList.filter(a => {
+                if (key === 'today') return a.date === today;
+                if (key === 'week') return a.date >= weekStartStr && a.date <= today;
+                if (key === 'month') return a.date >= monthStartStr;
+                return true;
+              }).length;
 
-            return (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm lg:text-base transition-all shadow-md focus:outline-none focus:ring-0
-  ${filter === key 
-    ? `bg-gradient-to-r from-${color}-600 to-${color}-700 text-white shadow-lg` 
-    : 'bg-white/90 text-gray-700 hover:bg-white hover:text-gray-900'
-  }`}
-              >
-                <Icon className="h-5 w-5" />
-                {label} ({count})
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm lg:text-base transition-all shadow-md focus:outline-none focus:ring-0
+  ${filter === key
+                      ? `bg-gradient-to-r from-${color}-600 to-${color}-700 text-white shadow-lg`
+                      : 'bg-white/90 text-gray-700 hover:bg-white hover:text-gray-900'
+                    }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label} ({count})
+                </button>
+              );
+            })}
           </div>
         </div>
 
