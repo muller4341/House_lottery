@@ -126,9 +126,10 @@ const CurrentAssignmentsPage = () => {
 
   const fetchUsersByRole = async (role) => {
     try {
-      const response = await fetch(`/ api / users ? role = ${role}& status=0`);
+     const response = await fetch(`/api/users/active?role=${role}`);
       if (response.ok) {
         const data = await response.json();
+        console.log(`Fetched ${role}s: `, data);
         return data;
       } else {
         throw new Error(`Failed to fetch ${role} `);
@@ -374,40 +375,7 @@ const CurrentAssignmentsPage = () => {
       alert(error.message);
     }
   };
-
-  const handleBulkUpload = async (e) => {
-    e.preventDefault();
-    if (!bulkFile) {
-      alert('Please select a file.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', bulkFile);
-
-    try {
-      const response = await fetch('/api/assignments/bulk', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Bulk upload failed');
-      }
-
-      const result = await response.json();
-      alert(result.message);
-      if (result.errors.length > 0) {
-        console.log('Bulk errors:', result.errors);
-      }
-      fetchAssignments();
-      setBulkFile(null);
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
+  
   const handleExport = async (format = 'excel') => {
     try {
       const response = await fetch(`/ api / assignments /export?format = ${format} `);
@@ -479,135 +447,135 @@ const CurrentAssignmentsPage = () => {
   }
 
   const renderEditModal = () => showEditModal && (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Edit Assignment</h3>
-          <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700">
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-        </div>
-        {renderAssignmentForm()}  {/* Now this function exists */}
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h3 className="text-2xl font-bold text-gray-900">Edit Assignment</h3>
+        <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700">
+          <XMarkIcon className="h-8 w-8" />
+        </button>
       </div>
+      {renderAssignmentFormForModal()}
     </div>
-  );
+  </div>
+);
   const renderViewModal = () => showViewModal && viewingAssignment && (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-900">Assignment Details</h3>
-          <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700">
-            <XMarkIcon className="h-7 w-7" />
-          </button>
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-5xl max-h-[90vh] overflow-y-auto p-8">
+      <div className="flex justify-between items-center mb-8 border-b pb-6">
+        <div>
+          <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-700 to-purple-800">
+            Assignment Details
+          </h3>
+          <p className="text-lg text-gray-600 mt-2">Date: {formatDate(viewingAssignment.date)}</p>
+        </div>
+        <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-3 rounded-xl transition-all">
+          <XMarkIcon className="h-8 w-8" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Branches */}
+        <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 rounded-2xl p-6 border-2 border-fuchsia-200">
+          <h4 className="text-xl font-bold text-fuchsia-800 mb-4">Branches Assigned</h4>
+          <div className="flex flex-col gap-3">
+            {Array.isArray(viewingAssignment.branchNames)
+              ? viewingAssignment.branchNames.map((name, i) => (
+                  <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-bold">
+                    {name.trim()}
+                  </span>
+                ))
+              : viewingAssignment.branchNames?.split(',').map((name, i) => (
+                  <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-bold">
+                    {name.trim()}
+                  </span>
+                )) || <span className="text-gray-500 italic">—</span>
+            }
+          </div>
         </div>
 
-        <div className="space-y-8">
-          {/* DATE & ID */}
-          <div className="text-center">
-            <h3 className="text-3xl font-black text-fuchsia-800 mb-2">
-              {formatDate(viewingAssignment.date)}
-            </h3>
-            <p className="text-lg text-gray-600">ID: {viewingAssignment.id.slice(0, 8)}...</p>
-          </div>
-
-          {/* BRANCHES & AO IDs — NOW SHOWING ALL */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 rounded-2xl p-6 border-2 border-fuchsia-200">
-              <h4 className="text-lg font-bold text-fuchsia-800 mb-4">Branches Assigned</h4>
-              <div className="flex flex-wrap gap-2">
-                {Array.isArray(viewingAssignment.branchNames)
-                  ? viewingAssignment.branchNames.map((name, i) => (
-                    <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-semibold">
-                      {name.trim()}
-                    </span>
-                  ))
-                  : viewingAssignment.branchNames?.split(',').map((name, i) => (
-                    <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-semibold">
-                      {name.trim()}
-                    </span>
-                  )) || <span className="text-gray-500">—</span>
-                }
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl p-6 border-2 border-rose-200">
-              <h4 className="text-lg font-bold text-rose-800 mb-4">Account Officer IDs</h4>
-              <div className="flex flex-wrap gap-2">
-                {Array.isArray(viewingAssignment.accountOfficerEmployeeIds)
-                  ? viewingAssignment.accountOfficerEmployeeIds.map((id, i) => (
-                    <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-semibold">
-                      {id.trim()}
-                    </span>
-                  ))
-                  : viewingAssignment.accountOfficerEmployeeIds?.split(',').map((id, i) => (
-                    <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-semibold">
-                      {id.trim()}
-                    </span>
-                  )) || <span className="text-gray-500">—</span>
-                }
-              </div>
-            </div>
-          </div>
-
-          {/* OFFICERS */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-6 border-2 border-emerald-200">
-              <h4 className="text-xl font-black text-emerald-800 mb-4">Officer 1</h4>
-              <div className="space-y-3 text-lg">
-                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer1?.name || '-'}</p>
-                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer1Phone || viewingAssignment.officer1?.phone || '-'}</p>
-                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer1Shift)}</p>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-3xl p-6 border-2 border-teal-200">
-              <h4 className="text-xl font-black text-teal-800 mb-4">Officer 2</h4>
-              <div className="space-y-3 text-lg">
-                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer2?.name || '-'}</p>
-                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer2Phone || viewingAssignment.officer2?.phone || '-'}</p>
-                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer2Shift)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* TEAM LEADERS */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {viewingAssignment.tl1Id && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-6 border-2 border-purple-200">
-                <h4 className="text-xl font-black text-purple-800 mb-4">Team Leader 1</h4>
-                <div className="space-y-3 text-lg">
-                  <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl1?.name || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl1Phone || viewingAssignment.tl1?.phone || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl1Shift)}</p>
-                </div>
-              </div>
-            )}
-
-            {viewingAssignment.tl2Id && (
-              <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-6 border-2 border-pink-200">
-                <h4 className="text-xl font-black text-pink-800 mb-4">Team Leader 2</h4>
-                <div className="space-y-3 text-lg">
-                  <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl2?.name || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl2Phone || viewingAssignment.tl2?.phone || '-'}</p>
-                  <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl2Shift)}</p>
-                </div>
-              </div>
-            )}
+        {/* AO IDs */}
+        <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl p-6 border-2 border-rose-200">
+          <h4 className="text-xl font-bold text-rose-800 mb-4">Account Officer IDs</h4>
+          <div className="flex flex-col gap-3">
+            {Array.isArray(viewingAssignment.accountOfficerEmployeeIds)
+              ? viewingAssignment.accountOfficerEmployeeIds.map((id, i) => (
+                  <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-bold">
+                    {id.trim()}
+                  </span>
+                ))
+              : viewingAssignment.accountOfficerEmployeeIds?.split(',').map((id, i) => (
+                  <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-bold">
+                    {id.trim()}
+                  </span>
+                )) || <span className="text-gray-500 italic">—</span>
+            }
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        {/* Officer 1 & 2 */}
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 border-2 border-emerald-200">
+            <h4 className="text-2xl font-black text-emerald-800 mb-6">Officer 1</h4>
+            <div className="space-y-4 text-lg">
+              <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer1?.name || '-'}</p>
+              <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer1Phone || viewingAssignment.officer1?.phone || '-'}</p>
+              <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer1Shift)}</p>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-3xl p-8 border-2 border-teal-200">
+            <h4 className="text-2xl font-black text-teal-800 mb-6">Officer 2</h4>
+            <div className="space-y-4 text-lg">
+              <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer2?.name || '-'}</p>
+              <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer2Phone || viewingAssignment.officer2?.phone || '-'}</p>
+              <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer2Shift)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Team Leaders */}
+        <div className="space-y-6">
+          {viewingAssignment.tl1Id && (
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 border-2 border-purple-200">
+              <h4 className="text-2xl font-black text-purple-800 mb-6">Team Leader 1</h4>
+              <div className="space-y-4 text-lg">
+                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl1?.name || '-'}</p>
+                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl1Phone || viewingAssignment.tl1?.phone || '-'}</p>
+                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl1Shift)}</p>
+              </div>
+            </div>
+          )}
+
+          {viewingAssignment.tl2Id && (
+            <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-8 border-2 border-pink-200">
+              <h4 className="text-2xl font-black text-pink-800 mb-6">Team Leader 2</h4>
+              <div className="space-y-4 text-lg">
+                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl2?.name || '-'}</p>
+                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl2Phone || viewingAssignment.tl2?.phone || '-'}</p>
+                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl2Shift)}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-  );
+  </div>
+);
   const handleBack = () => {
     navigate('/dashboard');
   };
 
-  const renderAssignmentForm = () => (
-    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 lg:p-8 overflow-y-auto border border-fuchsia-200/50 flex-1 min-h-0 mx-20">
-      <h2 className="text-2xl lg:text-3xl font-black text-fuchsia-800 mb-6 flex items-center space-x-2">
-        <CalendarIcon className="h-6 w-6 lg:h-8 lg:w-8" />
-        <span>Daily Assignment</span>
-      </h2>
+  const renderAssignmentFormForModal = () => (
+    <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-xl p-6 lg:p-8 border border-white/60">
+    <h2 className="text-2xl lg:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-700 to-purple-800 mb-6 flex items-center space-x-3">
+      <div className="p-2 bg-fuchsia-100/50 rounded-lg">
+        <CalendarIcon className="h-6 w-6 lg:h-8 lg:w-8 text-fuchsia-700" />
+      </div>
+      <span>{editingId ? 'Edit Assignment' : 'Daily Assignment'}</span>
+    </h2>
 
       <form onSubmit={handleAssignSubmit} className="space-y-6">
         {/* Form remains 100% unchanged */}
@@ -781,7 +749,7 @@ const CurrentAssignmentsPage = () => {
                           onClick={() => {
                             handleSelectChange('officer1', o.id);
                             setOpenDropdown(null);
-                            setSearch({ ...search, officer1: '' });
+                            setSearch(prev => ({ ...prev, officer1: '' }));
                           }}
                           className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
                         >
@@ -1127,21 +1095,12 @@ const CurrentAssignmentsPage = () => {
 
 
 
-        <button type="submit" className="w-full bg-gradient-to-r from-fuchsia-600 to-rose-600 text-white py-3 lg:py-4 rounded-xl font-bold hover:from-fuchsia-700 hover:to-rose-700 transition-all duration-300 text-sm lg:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-          {editingId ? 'Update Assignment' : 'Create Assignment'}
-        </button>
+        <button type="submit" className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white py-3 lg:py-4 rounded-xl font-bold hover:from-fuchsia-700 hover:to-purple-700 transition-all duration-300 text-sm lg:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+        {editingId ? 'Update Assignment' : 'Update Assignment'}
+      </button>
       </form>
 
-      <div className="mt-6 border-t border-fuchsia-200 pt-6">
-        <h3 className="text-xl font-bold text-fuchsia-800 mb-4">Bulk Upload (Excel)</h3>
-        <form onSubmit={handleBulkUpload} className="space-y-4">
-          <input type="file" accept=".xlsx, .xls" onChange={(e) => setBulkFile(e.target.files[0])} className="w-full px-3 py-2 border border-fuchsia-300 rounded-lg text-sm" />
-          <button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
-            <DocumentArrowUpIcon className="h-5 w-5" />
-            <span>Upload Bulk Assignments</span>
-          </button>
-        </form>
-      </div>
+     
     </div>
   );
 
@@ -1257,12 +1216,12 @@ const CurrentAssignmentsPage = () => {
                             <div className="flex flex-col gap-1">
                               {Array.isArray(a.branchNames)
                                 ? a.branchNames.map((n, i) => (
-                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-100 group-hover:border-fuchsia-200 transition-colors">
+                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-50 text-slate-700 border border-fuchsia-100 group-hover:border-fuchsia-200 transition-colors">
                                     {n.trim()}
                                   </span>
                                 ))
                                 : (a.branchNames || '').split(',').map((n, i) => (
-                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-100 group-hover:border-fuchsia-200 transition-colors">
+                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-50 text-slate-700 border border-fuchsia-100 group-hover:border-fuchsia-200 transition-colors">
                                     {n.trim()}
                                   </span>
                                 ))}
@@ -1274,12 +1233,12 @@ const CurrentAssignmentsPage = () => {
                             <div className="flex flex-col gap-1">
                               {Array.isArray(a.accountOfficerEmployeeIds)
                                 ? a.accountOfficerEmployeeIds.map((id, i) => (
-                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-100 group-hover:border-rose-200 transition-colors">
+                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700 border border-rose-100 group-hover:border-rose-200 transition-colors">
                                     {id.trim()}
                                   </span>
                                 ))
                                 : (a.accountOfficerEmployeeIds || '').split(',').map((id, i) => (
-                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-100 group-hover:border-rose-200 transition-colors">
+                                  <span key={i} className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-fullbg-blue-50 text-blue-700 border border-rose-100 group-hover:border-rose-200 transition-colors">
                                     {id.trim()}
                                   </span>
                                 ))}
