@@ -277,7 +277,7 @@ const AssignmentViewPage = () => {
                           <td className="px-6 py-4 align-top border-r border-slate-100 ">
                             <div className="flex flex-col gap-2">
                               {(Array.isArray(a.branchNames) ? a.branchNames : a.branchNames?.split(',') || []).map((name, i) => (
-                                <span key={i} className="px-3 py-1 bg-white border border-slate-100 text-slate-700 rounded-lg text-xs font-semibold shadow-sm ">
+                                <span key={i} className="px-3 py-1 bg-slate-100  border border-slate-100 text-slate-700 rounded-lg text-xs font-semibold shadow-sm ">
                                   {name.trim()}
                                 </span>
                               ))}
