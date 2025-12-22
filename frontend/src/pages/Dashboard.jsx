@@ -29,33 +29,17 @@ const Dashboard = () => {
   }
 
   const quickActions = [
-    {
-      icon: ClipboardDocumentListIcon,
-      title: "View Assignments",
-      path: "/assignment-view",
-      color: "from-blue-600 to-cyan-600",
-      iconColor: "text-blue-600",
-      iconBgColor: "bg-blue-50",
-      shadowColor: "shadow-blue-500/20",
-    },
-    {
-      icon: ChartBarIcon,
-      title: "Assignment History",
-      path: "/assignment-history",
-      color: "from-purple-600 to-violet-600",
-      iconColor: "text-purple-600",
-      iconBgColor: "bg-purple-50",
-      shadowColor: "shadow-purple-500/20",
-    },
-    {
-      icon: UsersIcon,
-      title: "Customer List",
-      path: "/customers",
-      color: "from-pink-600 to-rose-600",
-      iconColor: "text-pink-600",
-      iconBgColor: "bg-pink-50",
-      shadowColor: "shadow-pink-500/20",
-    },
+   
+   
+    // {
+    //   icon: UsersIcon,
+    //   title: "Customer List",
+    //   path: "/customers",
+    //   color: "from-pink-600 to-rose-600",
+    //   iconColor: "text-pink-600",
+    //   iconBgColor: "bg-pink-50",
+    //   shadowColor: "shadow-pink-500/20",
+    // },
 
     ...(user?.role === "CENTRAL_KYC_MANAGER"
       ? [
@@ -109,6 +93,15 @@ const Dashboard = () => {
           iconBgColor: "bg-emerald-50",
           shadowColor: "shadow-emerald-500/20",
         },
+         {
+      icon: ChartBarIcon,
+      title: "Assignment History",
+      path: "/assignment-history",
+      color: "from-purple-600 to-violet-600",
+      iconColor: "text-purple-600",
+      iconBgColor: "bg-purple-50",
+      shadowColor: "shadow-purple-500/20",
+    },
         {
           icon: ClipboardDocumentCheckIcon,
           title: "Current Assignments",
@@ -132,9 +125,36 @@ const Dashboard = () => {
           iconBgColor: "bg-yellow-50",
           shadowColor: "shadow-yellow-500/20",
         },
+         {
+      icon: ClipboardDocumentListIcon,
+      title: "View Assignments",
+      path: "/assignment-view",
+      color: "from-blue-600 to-cyan-600",
+      iconColor: "text-blue-600",
+      iconBgColor: "bg-blue-50",
+      shadowColor: "shadow-blue-500/20",
+    },
       ]
       : []),
+
+
+      ...(user?.role === "USER"
+      ? [
+        {
+      icon: ClipboardDocumentListIcon,
+      title: "View Assignments",
+      path: "/assignment-view",
+      color: "from-blue-600 to-cyan-600",
+      iconColor: "text-blue-600",
+      iconBgColor: "bg-blue-50",
+      shadowColor: "shadow-blue-500/20",
+    },
+        
+      ]
+      : []),
+
   ]
+   
 
   if (userLoading || !user) {
     return (

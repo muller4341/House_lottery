@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckIcon, ArrowLeftIcon, PencilIcon, TrashIcon, EyeIcon, XMarkIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import Modal from '../components/Modal';
+import { useLocation } from 'react-router-dom'; // ← add this import
 
 const formatDate = (dateStr) => {
   return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateStr));
@@ -20,6 +21,19 @@ const UserListPage = () => {
   const [userForm, setUserForm] = useState({ employeeId: '', name: '', role: '', phone: '' });
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const location = useLocation();
+  
+  useEffect(() => {
+  if (location.state?.editUserId) {
+    const userToEdit = users.find(u => u.id === location.state.editUserId);
+    if (userToEdit) {
+      handleEdit(userToEdit);
+      // Clear the state so it doesn't re-trigger
+      window.history.replaceState({}, '');
+    }
+  }
+}, [location.state, users]);
+  
 
   const [modal, setModal] = useState({
     isOpen: false,

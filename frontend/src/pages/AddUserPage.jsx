@@ -34,44 +34,87 @@ const AddUserPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!userForm.employeeId || !userForm.name || !userForm.role) {
-      setModal({
-        isOpen: true,
-        type: 'warning',
-        title: 'Missing Information',
-        message: 'Please fill in all required fields (Employee ID, Name, and Role).'
-      });
-      return;
+  e.preventDefault();
+
+  if (!userForm.employeeId || !userForm.name || !userForm.role) {
+    setModal({
+      isOpen: true,
+      type: 'warning',
+      title: 'Missing Information',
+      message: 'Please fill in all required fields (Employee ID, Name, and Role).'
+    });
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userForm)
+    });
+
+    if (res.status === 409) {
+      // Employee ID already exists → get the existing user and redirect to edit
+      const checkRes = await fetch(`/api/users?employeeId=${userForm.employeeId}`);
+      if (checkRes.ok) {
+        const users = await checkRes.json();
+        if (users.length > 0) {
+          const existingUser = users[0];
+
+          setModal({
+            isOpen: true,
+            type: 'info',
+            title: 'User Already Exists',
+            message: `User with Employee ID "${userForm.employeeId}" already exists. Redirecting to edit...`,
+            onConfirm: () => {
+              // Navigate to user list and trigger edit
+              navigate('/user-list', { 
+                state: { 
+                  editUserId: existingUser.id 
+                } 
+              });
+            }
+          });
+
+          // Auto-confirm after 2 seconds
+          setTimeout(() => {
+            setModal({ ...modal, isOpen: false });
+            navigate('/user-list', { 
+              state: { 
+                editUserId: existingUser.id 
+              } 
+            });
+          }, 5000);
+
+          return;
+        }
+      }
     }
 
-    try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userForm)
-      });
-
-      if (!res.ok) throw new Error('Failed to add user');
-
-      setModal({
-        isOpen: true,
-        type: 'success',
-        title: 'Success!',
-        message: 'User added successfully!'
-      });
-
-      setUserForm({ employeeId: '', name: '', role: '', phone: '' });
-    } catch (err) {
-      setModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Error',
-        message: err.message || 'Failed to add user. Please try again.'
-      });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to add user');
     }
-  };
 
+    // Success: new user created
+    setModal({
+      isOpen: true,
+      type: 'success',
+      title: 'Success!',
+      message: 'User added successfully!'
+    });
+
+    setUserForm({ employeeId: '', name: '', role: '', phone: '' });
+
+  } catch (err) {
+    setModal({
+      isOpen: true,
+      type: 'error',
+      title: 'Error',
+      message: err.message || 'Failed to add user. Please try again.'
+    });
+  }
+};
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans text-slate-800">
       {/* Dynamic Background from BranchListPage */}

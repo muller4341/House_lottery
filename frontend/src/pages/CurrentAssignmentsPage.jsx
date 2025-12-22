@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import Modal from '../components/Modal';
 import {
   ArrowLeftIcon,
   ArrowDownTrayIcon,
@@ -8,9 +9,11 @@ import {
   EyeIcon,
   TrashIcon,
   XMarkIcon,
-  CalendarIcon,           // ← Add this
-  DocumentArrowUpIcon,     // ← Also add this one (used in bulk upload button)
-  ClipboardDocumentCheckIcon
+  CalendarIcon,
+  CheckIcon,
+  DocumentArrowUpIcon,
+  ClipboardDocumentCheckIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 
 const formatDate = (dateStr) => {
@@ -41,6 +44,15 @@ const CurrentAssignmentsPage = () => {
   const [bulkFile, setBulkFile] = useState(null);
   const [error, setError] = useState(null);
 
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Confirm',
+    cancelText: 'Cancel'
+  });
 
   const [assignmentForm, setAssignmentForm] = useState({
     id: '',
@@ -71,6 +83,27 @@ const CurrentAssignmentsPage = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [search, setSearch] = useState({ officer1: '', officer2: '', tl1: '', tl2: '' });
 
+  // Refs for click outside
+  const officer1Ref = useRef(null);
+  const officer2Ref = useRef(null);
+  const tl1Ref = useRef(null);
+  const tl2Ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isInside = [officer1Ref, officer2Ref, tl1Ref, tl2Ref].some(
+        ref => ref.current && ref.current.contains(event.target)
+      );
+      if (!isInside) {
+        setOpenDropdown(null);
+      }
+    };
+    if (openDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdown]);
+
 
   useEffect(() => {
     fetchAssignments();
@@ -80,10 +113,24 @@ const CurrentAssignmentsPage = () => {
 
 
   const handleDateChange = async (e) => {
-
     const newDate = e.target.value;
-    setAssignmentForm(prev => ({ ...prev, date: newDate }));
+
+    // Initial reset of specific fields to ensure clean state
+    setAssignmentForm(prev => ({
+      ...prev,
+      date: newDate,
+      selectedBranches: [],
+      branchIds: [],
+      branchNames: [],
+      accountOfficerEmployeeIds: [],
+      officer1Id: '', officer1Shift: '', officer1Phone: '',
+      officer2Id: '', officer2Shift: '', officer2Phone: '',
+      tl1Id: '', tl1Shift: '', tl1Phone: '',
+      tl2Id: '', tl2Shift: '', tl2Phone: '',
+      officer1Name: '', officer2Name: '', tl1Name: '', tl2Name: ''
+    }));
     setDateSelected(!!newDate);
+    setEditingId(null);
 
     if (!newDate) {
       setAssignmentsOnSelectedDate([]);
@@ -91,10 +138,43 @@ const CurrentAssignmentsPage = () => {
     }
 
     try {
-      const response = await fetch(`/ api / assignments ? date = ${newDate} `);
+      const response = await fetch(`/api/assignments?date=${newDate}`);
       if (response.ok) {
         const data = await response.json();
-        setAssignmentsOnSelectedDate(data.assignments || []);
+        const existingAssignments = data.assignments || [];
+        setAssignmentsOnSelectedDate(existingAssignments);
+
+        if (existingAssignments.length > 0) {
+          const a = existingAssignments[0];
+          const getArray = (value) =>
+            Array.isArray(value) ? value : (value ? value.split(',').map(v => v.trim()) : []);
+
+          setAssignmentForm({
+            id: a.id,
+            date: a.date.split('T')[0],
+            selectedBranches: getArray(a.branchIds),
+            branchIds: getArray(a.branchIds),
+            branchNames: getArray(a.branchNames),
+            accountOfficerEmployeeIds: getArray(a.accountOfficerEmployeeIds),
+            officer1Id: a.officer1Id || '',
+            officer1Shift: a.officer1Shift || '',
+            officer1Phone: a.officer1Phone || (a.officer1?.phone || ''),
+            officer2Id: a.officer2Id || '',
+            officer2Shift: a.officer2Shift || '',
+            officer2Phone: a.officer2Phone || (a.officer2?.phone || ''),
+            tl1Id: a.tl1Id || '',
+            tl1Shift: a.tl1Shift || '',
+            tl1Phone: a.tl1Phone || (a.tl1?.phone || ''),
+            tl2Id: a.tl2Id || '',
+            tl2Shift: a.tl2Shift || '',
+            tl2Phone: a.tl2Phone || (a.tl2?.phone || ''),
+            officer1Name: a.officer1?.name || '',
+            officer2Name: a.officer2?.name || '',
+            tl1Name: a.tl1?.name || '',
+            tl2Name: a.tl2?.name || '',
+          });
+          setEditingId(a.id);
+        }
       } else {
         setAssignmentsOnSelectedDate([]);
       }
@@ -126,7 +206,7 @@ const CurrentAssignmentsPage = () => {
 
   const fetchUsersByRole = async (role) => {
     try {
-     const response = await fetch(`/api/users/active?role=${role}`);
+      const response = await fetch(`/api/users/active?role=${role}`);
       if (response.ok) {
         const data = await response.json();
         console.log(`Fetched ${role}s: `, data);
@@ -195,10 +275,14 @@ const CurrentAssignmentsPage = () => {
     const userList = field.includes('officer') ? assignedOfficers : teamLeaders;
     const selectedUser = userList.find(u => u.id === value);
 
+    if (!selectedUser) return; // safety
+
     setAssignmentForm(prev => ({
       ...prev,
-      [`${field} Id`]: value,
-      [`${field} Phone`]: selectedUser?.phone || ''
+      [`${field}Id`]: value,
+      [`${field}Phone`]: selectedUser.phone || '',
+      // ADD THESE TWO LINES — store name directly
+      [`${field}Name`]: selectedUser.name,
     }));
   };
 
@@ -209,7 +293,7 @@ const CurrentAssignmentsPage = () => {
 
     setAssignmentForm(prev => ({
       ...prev,
-      [`${field} Shift`]: shift
+      [`${field}Shift`]: shift
     }));
   };
 
@@ -218,7 +302,7 @@ const CurrentAssignmentsPage = () => {
     const field = e.target.name.replace('Phone', '');
     setAssignmentForm(prev => ({
       ...prev,
-      [`${field} Phone`]: e.target.value
+      [`${field}Phone`]: e.target.value
     }));
   };
   const isOfficerAlreadyAssignedOnDate = (officerId, shift, currentDate) => {
@@ -239,12 +323,24 @@ const CurrentAssignmentsPage = () => {
     // Only check for duplicates when CREATING (not editing)
     if (!editingId) {
       if (isOfficerAlreadyAssignedOnDate(assignmentForm.officer1Id, assignmentForm.officer1Shift, currentDate)) {
-        alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer1Shift)} on this date.`);
+        const officerName = assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name || 'This officer';
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Officer Already Assigned',
+          message: `${officerName} is already assigned to ${getShiftLabel(assignmentForm.officer1Shift)} on this date.`
+        });
         return;
       }
 
       if (isOfficerAlreadyAssignedOnDate(assignmentForm.officer2Id, assignmentForm.officer2Shift, currentDate)) {
-        alert(`Officer ${assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name || ''} is already assigned to ${getShiftLabel(assignmentForm.officer2Shift)} on this date.`);
+        const officerName = assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name || 'This officer';
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Officer Already Assigned',
+          message: `${officerName} is already assigned to ${getShiftLabel(assignmentForm.officer2Shift)} on this date.`
+        });
         return;
       }
     }
@@ -273,6 +369,9 @@ const CurrentAssignmentsPage = () => {
       if (!assignmentForm.date) missing.push('Date');
       if (assignmentForm.branchIds.length === 0) missing.push('Branches');
       if (assignmentForm.accountOfficerEmployeeIds.length === 0) missing.push('AO IDs');
+      if (!assignmentForm.date) missing.push('Date');
+      if (assignmentForm.branchIds.length === 0) missing.push('Branches');
+      if (assignmentForm.accountOfficerEmployeeIds.length === 0) missing.push('AO IDs');
       if (!assignmentForm.officer1Id) missing.push('Officer 1');
       if (!assignmentForm.officer1Shift) missing.push('Officer 1 Shift');
       if (!assignmentForm.officer1Phone) missing.push('Officer 1 Phone');
@@ -286,7 +385,12 @@ const CurrentAssignmentsPage = () => {
       if (!assignmentForm.tl2Shift) missing.push('TL2 Shift');
       if (!assignmentForm.tl2Phone) missing.push('TL2 Phone');
 
-      alert('Please fill:\n• ' + missing.join('\n• '));
+      setModal({
+        isOpen: true,
+        type: 'warning',
+        title: 'Missing Required Fields',
+        message: 'Please fill in the following:\n• ' + missing.join('\n• ')
+      });
       return;
     }
 
@@ -315,8 +419,7 @@ const CurrentAssignmentsPage = () => {
       tl2Shift: assignmentForm.tl2Shift,
       tl2Phone: assignmentForm.tl2Phone
     });
-
-    const url = editingId ? `/ api / assignments / ${editingId} ` : '/api/assignments';
+    const url = editingId ? `/api/assignments/${editingId}` : '/api/assignments';
     const method = editingId ? 'PUT' : 'POST';
     try {
       const response = await fetch(url, {
@@ -346,7 +449,22 @@ const CurrentAssignmentsPage = () => {
         throw new Error(errorData.error || 'Failed to save assignment');
       }
 
-      alert(editingId ? 'Assignment updated successfully!' : 'Assignment created successfully!');
+      setModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Success!',
+        message: 'Assignment updated successfully!'
+      });
+
+      // Auto-close and navigate after 2 seconds
+      setTimeout(() => {
+        setModal(prev => ({ ...prev, isOpen: false }));
+        navigate('/current-assignments');
+        setAssignmentForm({ /* reset form */ });
+        setEditingId(null);
+        setShowEditModal(false);
+        fetchAssignments();
+      }, 5000);
       navigate('/current-assignments');
       setAssignmentForm({
         id: '',
@@ -372,10 +490,15 @@ const CurrentAssignmentsPage = () => {
       setShowEditModal(false);
       fetchAssignments();
     } catch (error) {
-      alert(error.message);
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error.message || 'Failed to save assignment'
+      });
     }
   };
-  
+
   const handleExport = async (format = 'excel') => {
     try {
       const response = await fetch(`/ api / assignments /export?format = ${format} `);
@@ -423,23 +546,50 @@ const CurrentAssignmentsPage = () => {
       tl1Phone: assignment.tl1Phone || '',
       tl2Id: assignment.tl2Id || '',
       tl2Shift: assignment.tl2Shift || '',
-      tl2Phone: assignment.tl2Phone || ''
+      tl2Phone: assignment.tl2Phone || '',
+      officer1Name: assignment.officer1?.name || '',
+      // same for officer2, tl1, tl2
+      officer2Name: assignment.officer2?.name || '',
+      tl1Name: assignment.tl1?.name || '',
+      tl2Name: assignment.tl2?.name || '',
     });
+
     setDateSelected(true);
-    setEditingAssignment(assignment); // or use a separate editingId if you prefer
+    setEditingId(assignment.id);  // ← ADD THIS LINE
     setShowEditModal(true);
   };
 
   const handleDeleteAssignment = async (id) => {
-    if (!confirm('Are you sure you want to delete this assignment?')) return;
-    try {
-      const response = await fetch(`/ api / assignments / ${id} `, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete');
-      alert('Assignment deleted successfully!');
-      fetchAssignments();
-    } catch (error) {
-      alert(error.message);
-    }
+    setModal({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Delete Assignment',
+      message: 'Are you sure you want to delete this assignment? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/assignments/${id}`, { method: 'DELETE' });
+          if (!response.ok) throw new Error('Failed to delete');
+
+          setModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Deleted!',
+            message: 'Assignment deleted successfully!'
+          });
+          fetchAssignments();
+        } catch (error) {
+          setModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: error.message || 'Failed to delete assignment'
+          });
+        }
+      }
+    });
+
   };
 
   if (loading) {
@@ -447,193 +597,316 @@ const CurrentAssignmentsPage = () => {
   }
 
   const renderEditModal = () => showEditModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-2xl p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <h3 className="text-2xl font-bold text-gray-900">Edit Assignment</h3>
-        <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700">
-          <XMarkIcon className="h-8 w-8" />
-        </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+      <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="flex justify-between items-center p-8 border-b border-gray-100 flex-shrink-0">
+          <div>
+            <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-700 to-purple-800">
+              Edit Assignment
+            </h3>
+            <p className="text-gray-500 font-medium mt-1">Modify assignment details</p>
+          </div>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-3 rounded-2xl transition-all duration-200"
+          >
+            <XMarkIcon className="h-8 w-8" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+          {renderAssignmentFormForModal()}
+        </div>
       </div>
-      {renderAssignmentFormForModal()}
     </div>
-  </div>
-);
+  );
   const renderViewModal = () => showViewModal && viewingAssignment && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-5xl max-h-[90vh] overflow-y-auto p-8">
-      <div className="flex justify-between items-center mb-8 border-b pb-6">
-        <div>
-          <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-700 to-purple-800">
-            Assignment Details
-          </h3>
-          <p className="text-lg text-gray-600 mt-2">Date: {formatDate(viewingAssignment.date)}</p>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+      <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="flex justify-between items-center p-8 border-b border-gray-100 flex-shrink-0">
+          <div>
+            <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-700 to-purple-800">
+              Assignment Details
+            </h3>
+            <p className="text-gray-500 font-medium mt-1">Assignment for {formatDate(viewingAssignment.date)}</p>
+          </div>
+          <button
+            onClick={() => setShowViewModal(false)}
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-3 rounded-2xl transition-all duration-200"
+          >
+            <XMarkIcon className="h-8 w-8" />
+          </button>
         </div>
-        <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-3 rounded-xl transition-all">
-          <XMarkIcon className="h-8 w-8" />
-        </button>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Branches */}
-        <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 rounded-2xl p-6 border-2 border-fuchsia-200">
-          <h4 className="text-xl font-bold text-fuchsia-800 mb-4">Branches Assigned</h4>
-          <div className="flex flex-col gap-3">
-            {Array.isArray(viewingAssignment.branchNames)
-              ? viewingAssignment.branchNames.map((name, i) => (
-                  <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-bold">
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Branches Section */}
+            <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-fuchsia-900/5">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="p-3 bg-fuchsia-100/50 rounded-2xl">
+                  <ClipboardDocumentCheckIcon className="h-6 w-6 text-fuchsia-700" />
+                </div>
+                <h4 className="text-xl font-bold text-gray-800">Branches Assigned</h4>
+              </div>
+              <div className="flex flex-col gap-2">
+                {(Array.isArray(viewingAssignment.branchNames)
+                  ? viewingAssignment.branchNames
+                  : viewingAssignment.branchNames?.split(',') || []
+                ).map((name, i) => (
+                  <span
+                    key={i}
+                    className="px-4 py-2 bg-gradient-to-r from-fuchsia-50 to-purple-50 text-fuchsia-700 border border-fuchsia-100 rounded-xl text-sm font-bold shadow-sm"
+                  >
                     {name.trim()}
                   </span>
-                ))
-              : viewingAssignment.branchNames?.split(',').map((name, i) => (
-                  <span key={i} className="px-4 py-2 bg-fuchsia-200 text-fuchsia-900 rounded-full text-sm font-bold">
-                    {name.trim()}
-                  </span>
-                )) || <span className="text-gray-500 italic">—</span>
-            }
-          </div>
-        </div>
-
-        {/* AO IDs */}
-        <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl p-6 border-2 border-rose-200">
-          <h4 className="text-xl font-bold text-rose-800 mb-4">Account Officer IDs</h4>
-          <div className="flex flex-col gap-3">
-            {Array.isArray(viewingAssignment.accountOfficerEmployeeIds)
-              ? viewingAssignment.accountOfficerEmployeeIds.map((id, i) => (
-                  <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-bold">
-                    {id.trim()}
-                  </span>
-                ))
-              : viewingAssignment.accountOfficerEmployeeIds?.split(',').map((id, i) => (
-                  <span key={i} className="px-4 py-2 bg-rose-200 text-rose-900 rounded-full text-sm font-bold">
-                    {id.trim()}
-                  </span>
-                )) || <span className="text-gray-500 italic">—</span>
-            }
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        {/* Officer 1 & 2 */}
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 border-2 border-emerald-200">
-            <h4 className="text-2xl font-black text-emerald-800 mb-6">Officer 1</h4>
-            <div className="space-y-4 text-lg">
-              <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer1?.name || '-'}</p>
-              <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer1Phone || viewingAssignment.officer1?.phone || '-'}</p>
-              <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer1Shift)}</p>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-3xl p-8 border-2 border-teal-200">
-            <h4 className="text-2xl font-black text-teal-800 mb-6">Officer 2</h4>
-            <div className="space-y-4 text-lg">
-              <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.officer2?.name || '-'}</p>
-              <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.officer2Phone || viewingAssignment.officer2?.phone || '-'}</p>
-              <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.officer2Shift)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Team Leaders */}
-        <div className="space-y-6">
-          {viewingAssignment.tl1Id && (
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 border-2 border-purple-200">
-              <h4 className="text-2xl font-black text-purple-800 mb-6">Team Leader 1</h4>
-              <div className="space-y-4 text-lg">
-                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl1?.name || '-'}</p>
-                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl1Phone || viewingAssignment.tl1?.phone || '-'}</p>
-                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl1Shift)}</p>
+                )) || <span className="text-gray-400 italic">No branches assigned</span>}
               </div>
             </div>
-          )}
 
-          {viewingAssignment.tl2Id && (
-            <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-8 border-2 border-pink-200">
-              <h4 className="text-2xl font-black text-pink-800 mb-6">Team Leader 2</h4>
-              <div className="space-y-4 text-lg">
-                <p><span className="font-bold text-gray-700">Name:</span> {viewingAssignment.tl2?.name || '-'}</p>
-                <p><span className="font-bold text-gray-700">Phone:</span> {viewingAssignment.tl2Phone || viewingAssignment.tl2?.phone || '-'}</p>
-                <p><span className="font-bold text-gray-700">Shift:</span> {getShiftLabel(viewingAssignment.tl2Shift)}</p>
+            {/* AO IDs Section */}
+            <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-rose-900/5">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="p-3 bg-rose-100/50 rounded-2xl">
+                  <CheckIcon className="h-6 w-6 text-rose-700" />
+                </div>
+                <h4 className="text-xl font-bold text-gray-800">Account Officer IDs</h4>
+              </div>
+              <div className="flex flex-col gap-2">
+                {(Array.isArray(viewingAssignment.accountOfficerEmployeeIds)
+                  ? viewingAssignment.accountOfficerEmployeeIds
+                  : viewingAssignment.accountOfficerEmployeeIds?.split(',') || []
+                ).map((id, i) => (
+                  <span
+                    key={i}
+                    className="px-4 py-2 bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 border border-rose-100 rounded-xl text-sm font-bold shadow-sm"
+                  >
+                    {id.trim()}
+                  </span>
+                )) || <span className="text-gray-400 italic">No AO IDs assigned</span>}
               </div>
             </div>
-          )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            {/* Officers Section */}
+            <div className="space-y-6">
+              <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-emerald-900/5">
+                <h4 className="text-xl font-black text-emerald-800 mb-6 flex items-center">
+                  <div className="w-2 h-8 bg-emerald-500 rounded-full mr-3" />
+                  Officer 1
+                </h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                    <span className="text-gray-500 font-medium">Name</span>
+                    <span className="text-gray-900 font-bold">{viewingAssignment.officer1?.name || '—'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                    <span className="text-gray-500 font-medium">Phone</span>
+                    <span className="text-gray-900 font-bold">{viewingAssignment.officer1Phone || viewingAssignment.officer1?.phone || '—'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3">
+                    <span className="text-gray-500 font-medium">Shift</span>
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-bold">
+                      {getShiftLabel(viewingAssignment.officer1Shift)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-teal-900/5">
+                <h4 className="text-xl font-black text-teal-800 mb-6 flex items-center">
+                  <div className="w-2 h-8 bg-teal-500 rounded-full mr-3" />
+                  Officer 2
+                </h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                    <span className="text-gray-500 font-medium">Name</span>
+                    <span className="text-gray-900 font-bold">{viewingAssignment.officer2?.name || '—'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                    <span className="text-gray-500 font-medium">Phone</span>
+                    <span className="text-gray-900 font-bold">{viewingAssignment.officer2Phone || viewingAssignment.officer2?.phone || '—'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3">
+                    <span className="text-gray-500 font-medium">Shift</span>
+                    <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-lg text-sm font-bold">
+                      {getShiftLabel(viewingAssignment.officer2Shift)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Team Leaders Section */}
+            <div className="space-y-6">
+              {viewingAssignment.tl1Id && (
+                <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-purple-900/5">
+                  <h4 className="text-xl font-black text-purple-800 mb-6 flex items-center">
+                    <div className="w-2 h-8 bg-purple-500 rounded-full mr-3" />
+                    Team Leader 1
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                      <span className="text-gray-500 font-medium">Name</span>
+                      <span className="text-gray-900 font-bold">{viewingAssignment.tl1?.name || '—'}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                      <span className="text-gray-500 font-medium">Phone</span>
+                      <span className="text-gray-900 font-bold">{viewingAssignment.tl1Phone || viewingAssignment.tl1?.phone || '—'}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3">
+                      <span className="text-gray-500 font-medium">Shift</span>
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm font-bold">
+                        {getShiftLabel(viewingAssignment.tl1Shift)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewingAssignment.tl2Id && (
+                <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-pink-900/5">
+                  <h4 className="text-xl font-black text-pink-800 mb-6 flex items-center">
+                    <div className="w-2 h-8 bg-pink-500 rounded-full mr-3" />
+                    Team Leader 2
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                      <span className="text-gray-500 font-medium">Name</span>
+                      <span className="text-gray-900 font-bold">{viewingAssignment.tl2?.name || '—'}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b border-gray-50">
+                      <span className="text-gray-500 font-medium">Phone</span>
+                      <span className="text-gray-900 font-bold">{viewingAssignment.tl2Phone || viewingAssignment.tl2?.phone || '—'}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3">
+                      <span className="text-gray-500 font-medium">Shift</span>
+                      <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-lg text-sm font-bold">
+                        {getShiftLabel(viewingAssignment.tl2Shift)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
   const handleBack = () => {
     navigate('/dashboard');
   };
 
   const renderAssignmentFormForModal = () => (
-    <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-xl p-6 lg:p-8 border border-white/60">
-    <h2 className="text-2xl lg:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-700 to-purple-800 mb-6 flex items-center space-x-3">
-      <div className="p-2 bg-fuchsia-100/50 rounded-lg">
-        <CalendarIcon className="h-6 w-6 lg:h-8 lg:w-8 text-fuchsia-700" />
-      </div>
-      <span>{editingId ? 'Edit Assignment' : 'Daily Assignment'}</span>
-    </h2>
-
-      <form onSubmit={handleAssignSubmit} className="space-y-6">
-        {/* Form remains 100% unchanged */}
-        {/* REPLACE FROM <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6"> */}
-
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-          <div>
-            <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-1 lg:mb-2">
-              Date *
+    <div className="bg-white/40 backdrop-blur-sm rounded-3xl p-1 lg:p-2 border border-white/60">
+      <form onSubmit={handleAssignSubmit} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          {/* Date Picker */}
+          <div className="bg-white/50 backdrop-blur-sm p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-fuchsia-900/5 transition-all hover:shadow-fuchsia-900/10 relative z-40">
+            <label className="block text-xs lg:text-sm font-bold text-gray-700 mb-3 ml-1">
+              Assignment Date *
             </label>
-            <input
-              type="date"
-              name="date"
-              value={assignmentForm.date}
-              onChange={handleDateChange}
-              className="w-full px-3 py-2 lg:py-3 border border-fuchsia-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent text-sm lg:text-base"
-              required
-            />
+            <div className="relative">
+              <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-fuchsia-500 " />
+              <input
+                type="date"
+                name="date"
+                value={assignmentForm.date}
+                onChange={handleDateChange}
+                className="w-full pl-12 pr-4 py-3 lg:py-4 border border-slate-200 bg-white/50 rounded-2xl focus:ring-4 focus:ring-fuchsia-500/10 focus:border-fuchsia-500/50 text-sm lg:text-base outline-none transition-all hover:bg-white/80 font-medium"
+                required
+              />
+            </div>
 
             {(!assignmentForm.date || assignmentForm.date === '2025-12-02') ? (
-              <p className="text-xs font-semibold text-red-600 mt-2 animate-pulse">
-                Please select a date first
-              </p>
+              <div className="flex items-center mt-3 ml-1 space-x-2 text-rose-500 animate-pulse">
+                <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                <p className="text-xs font-bold">Please select a date first</p>
+              </div>
             ) : assignmentsOnSelectedDate.length > 0 ? (
-              <p className="text-xs text-gray-500 mt-1">
-                {assignmentsOnSelectedDate.length} assignment(s) already exist on this date
-              </p>
+              <div className="flex items-center mt-3 ml-1 space-x-2 text-amber-500">
+                <div className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                <p className="text-xs font-bold">{assignmentsOnSelectedDate.length} assignment(s) exist on this date</p>
+              </div>
             ) : (
-              <p className="text-xs text-green-600 font-medium mt-1">
-                No assignments yet — you can assign freely
-              </p>
+              <div className="flex items-center mt-3 ml-1 space-x-2 text-emerald-500">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                <p className="text-xs font-bold">No assignments yet — you can assign freely</p>
+              </div>
             )}
           </div>
 
+          {/* AO IDs Input */}
+          <div className="bg-white/50 backdrop-blur-sm p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-rose-900/5 transition-all hover:shadow-rose-900/10 flex flex-col justify-center relative z-40">
+            <label className="block text-xs lg:text-sm font-bold text-gray-700 mb-3 ml-1">
+              Account Officer IDs *
+            </label>
+            <div className="relative">
+              <CheckIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-rose-500" />
+              <input
+                type="text"
+                value={Array.isArray(assignmentForm.accountOfficerEmployeeIds)
+                  ? assignmentForm.accountOfficerEmployeeIds.join(', ')
+                  : ''}
+                onChange={(e) => {
+                  const input = e.target.value;
+                  const newAoIds = input.split(',').map(id => id.trim()).filter(id => id);
+                  const matchingBranchIds = branches
+                    .filter(b => newAoIds.includes(b.accountOfficerId))
+                    .map(b => b.id);
 
-          {/* MULTIPLE BRANCHES + MANUAL AO ID */}
-          <div className="md:col-span-2">
-            <label className="block text-xs lg:text-sm font-semibold text-gray-700 mb-3">Branches * (Select multiple)</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto border border-fuchsia-300 rounded-lg p-4 bg-white/50">
+                  setAssignmentForm(prev => ({
+                    ...prev,
+                    accountOfficerEmployeeIds: newAoIds,
+                    selectedBranches: matchingBranchIds,
+                    branchIds: matchingBranchIds,
+                    branchNames: branches.filter(b => matchingBranchIds.includes(b.id)).map(b => b.name)
+                  }));
+                }}
+                placeholder="e.g. 1234, 5678"
+                className="w-full pl-12 pr-4 py-3 lg:py-4 border border-slate-200 bg-white/50 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500/50 text-sm lg:text-base outline-none transition-all hover:bg-white/80 font-medium"
+                required
+              />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-2 ml-1 italic">Enter AO IDs separated by commas to auto-select branches</p>
+          </div>
+
+          {/* Branches Section */}
+          <div className="md:col-span-2 bg-white/50 backdrop-blur-sm p-8 rounded-[2.5rem] border border-white/60 shadow-xl shadow-purple-900/5 transition-all hover:shadow-purple-900/10 relative z-30">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-purple-100/50 rounded-2xl">
+                  <ClipboardDocumentCheckIcon className="h-6 w-6 text-purple-700" />
+                </div>
+                <div>
+                  <label className="block text-sm lg:text-base font-black text-gray-800">Assign Branches *</label>
+                  <div className="flex items-center space-x-3 mt-1">
+                    <span className="px-2.5 py-1 rounded-lg bg-fuchsia-100 text-fuchsia-700 text-[10px] font-black uppercase tracking-wider border border-fuchsia-200">
+                      Selected: {assignmentForm.selectedBranches?.length || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-72 overflow-y-auto p-2 custom-scrollbar">
               {branches
                 .filter(branch => {
-                  // SAFELY check if this branch is already used on selected date
                   return !assignmentsOnSelectedDate.some(a => {
                     const usedIds = Array.isArray(a.branchIds)
                       ? a.branchIds
                       : (a.branchIds ? a.branchIds.split(',').map(id => id.trim()) : []);
-                    return usedIds.includes(branch.id);
+                    return usedIds.includes(branch.id) && a.id !== editingId;
                   });
                 })
                 .map(branch => (
-                  <label key={branch.id} className="flex items-center gap-3 p-3 hover:bg-fuchsia-50/50 rounded-lg cursor-pointer transition-colors"
-                    onClick={(e) => {
-                      if (!dateSelected) {
-                        e.preventDefault();
-                        showDateWarning();
-                      }
-                    }}>
+                  <label
+                    key={branch.id}
+                    className={`flex items-start gap-3 p-4 rounded-3xl cursor-pointer transition-all border-2 ${assignmentForm.selectedBranches?.includes(branch.id)
+                      ? 'bg-fuchsia-50/50 border-fuchsia-200 shadow-md shadow-fuchsia-900/5'
+                      : 'bg-white/50 border-transparent hover:border-gray-100 hover:bg-white/80'
+                      }`}
+                  >
                     <input
                       type="checkbox"
                       checked={assignmentForm.selectedBranches?.includes(branch.id) || false}
@@ -645,10 +918,8 @@ const CurrentAssignmentsPage = () => {
                           const newSelected = checked
                             ? [...selected, branch.id]
                             : selected.filter(id => id !== branch.id);
-
                           const selectedBranchesData = branches.filter(b => newSelected.includes(b.id));
                           const aoIds = selectedBranchesData.map(b => b.accountOfficerId).filter(Boolean);
-
                           return {
                             ...prev,
                             selectedBranches: newSelected,
@@ -658,449 +929,366 @@ const CurrentAssignmentsPage = () => {
                           };
                         });
                       }}
-                      className="w-5 h-5 text-fuchsia-600 rounded focus:ring-fuchsia-500"
+                      className="mt-1 w-5 h-5 text-fuchsia-600 rounded-lg border-gray-300 focus:ring-fuchsia-500 transition-all cursor-pointer"
                     />
-                    <div>
-                      <div className="font-medium text-gray-800 text-sm">{branch.name}</div>
-                      <div className="text-xs text-gray-500">AO: {branch.accountOfficerId || '—'}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-gray-800 text-sm truncate">{branch.name}</div>
+                      <div className="text-[10px] text-gray-500 font-bold mt-1 bg-gray-100/50 inline-block px-2 py-0.5 rounded-md uppercase">ID: {branch.accountOfficerId || '—'}</div>
                     </div>
                   </label>
                 ))}
-
             </div>
-
-            {/* Manual AO ID Input — NOW AUTO-CHECKS BRANCHES */}
-            <label className="block text-xs lg:text-sm font-semibold text-gray-700 mt-4 mb-2">
-              Account Officer IDs * (Auto-filled or edit manually)
-            </label>
-            <input
-              type="text"
-              value={Array.isArray(assignmentForm.accountOfficerEmployeeIds)
-                ? assignmentForm.accountOfficerEmployeeIds.join(', ')
-                : ''}
-              onChange={(e) => {
-                const input = e.target.value;
-                const newAoIds = input.split(',').map(id => id.trim()).filter(id => id);
-
-                // AUTO-CHECK BRANCHES THAT MATCH THESE AO IDs
-                const matchingBranchIds = branches
-                  .filter(b => newAoIds.includes(b.accountOfficerId))
-                  .map(b => b.id);
-
-                setAssignmentForm(prev => ({
-                  ...prev,
-                  accountOfficerEmployeeIds: newAoIds,
-                  selectedBranches: matchingBranchIds,
-                  branchIds: matchingBranchIds,
-                  branchNames: branches.filter(b => matchingBranchIds.includes(b.id)).map(b => b.name)
-                }));
-              }}
-              placeholder="1234, 5678, 9012"
-              className="w-full px-3 py-2 lg:py-3 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm lg:text-base"
-              required
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-          <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200">
-            <h3 className="text-base lg:text-lg font-bold text-emerald-800 mb-3">Officer 1 *</h3>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === 'officer1' ? null : 'officer1')}
-                disabled={!dateSelected}
-                className="w-full px-3 py-2 border-1  border-emerald-300 rounded-lg bg-green-50 text-sm text-left mb-2
-             disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
-             flex justify-between items-center "
-              >
-                <span className="truncate">
-                  {assignmentForm.officer1Id
-                    ? assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name
-                    : 'Select Officer 1'}
-                </span>
-                <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-
-              {openDropdown === 'officer1' && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden ">
-                  <input
-                    type="text"
-                    placeholder="Search by name or ID..."
-                    value={search.officer1}
-                    onChange={(e) => setSearch({ ...search, officer1: e.target.value })}
-                    className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
-                    autoFocus
-                  />
-                  <div className="max-h-60 overflow-y-auto">
-                    {assignedOfficers
-                      .filter(o =>
-                        o.id !== assignmentForm.officer2Id &&
-                        !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
-                        (o.name.toLowerCase().includes(search.officer1.toLowerCase()) ||
-                          (o.employeeId && o.employeeId.toLowerCase().includes(search.officer1.toLowerCase())))
-                      )
-                      .map(o => (
-                        <button
-                          key={o.id}
-                          type="button"
-                          onClick={() => {
-                            handleSelectChange('officer1', o.id);
-                            setOpenDropdown(null);
-                            setSearch(prev => ({ ...prev, officer1: '' }));
-                          }}
-                          className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
-                        >
-                          <span className="font-medium text-gray-500">{o.name}</span>
-                          <span className="text-gray-500 text-xs">({o.employeeId || 'No ID'})</span>
-                        </button>
-                      ))}
-                    {assignedOfficers
-                      .filter(o =>
-                        o.id !== assignmentForm.officer2Id &&
-                        !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
-                        (o.name.toLowerCase().includes(search.officer1.toLowerCase()) ||
-                          (o.employeeId && o.employeeId.toLowerCase().includes(search.officer1.toLowerCase())))
-                      ).length === 0 && (
-                        <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
-                          No officers found
-                        </div>
-                      )}
-                  </div>
-                </div>
-              )}
-            </div>
-            <input type="tel" name="officer1Phone" value={assignmentForm.officer1Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-emerald-300 rounded-lg mb-2 text-sm" />
-            {/* OFFICER 1 SHIFT — BIDIRECTIONAL */}
-            <select
-              name="officer1Shift"
-              value={assignmentForm.officer1Shift}
-              onChange={handleShiftChange}
-              onMouseDown={(e) => {
-                if (!dateSelected) {
-                  e.preventDefault();
-                  showDateWarning();
-                }
-              }}
-              disabled={!dateSelected}
-              className="w-full px-3 py-2 border border-emerald-300 rounded-lg text-sm"
-              required
-            >
-              <option value="">Select Shift</option>
-              <option value="I" disabled={assignmentForm.officer2Shift === 'I'}>Shift I</option>
-              <option value="II" disabled={assignmentForm.officer2Shift === 'II'}>Shift II</option>
-            </select>
           </div>
 
-          <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-200">
-            <h3 className="text-base lg:text-lg font-bold text-teal-800 mb-3">Officer 2 *</h3>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === 'officer2' ? null : 'officer2')}
-                disabled={!dateSelected}
-                className="w-full px-3 py-2 border-1 border-emerald-300 rounded-lg bg-green-50 text-sm text-left mb-2
-               disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
-               flex justify-between items-center"
-              >
-                <span className="truncate">
-                  {assignmentForm.officer2Id
-                    ? assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name
-                    : 'Select Officer 2'}
-                </span>
-                <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+          {/* Officer Sections */}
+          <div className="bg-white/50 backdrop-blur-sm p-8 rounded-[2.5rem] border border-white/60 shadow-xl shadow-emerald-900/5 transition-all hover:shadow-emerald-900/10 relative z-20">
+            <h3 className="text-lg font-black text-emerald-800 mb-6 flex items-center">
+              <div className="w-2 h-7 bg-emerald-500 rounded-full mr-3" />
+              Officer 1
+            </h3>
+            <div className="space-y-4">
+              <div className="relative" ref={officer1Ref}>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'officer1' ? null : 'officer1')}
+                  disabled={!dateSelected}
+                  className="w-full px-5 py-4 border border-slate-200 rounded-2xl bg-white/50 text-sm text-left disabled:bg-gray-50 disabled:text-gray-400 font-bold text-gray-700 flex justify-between items-center transition-all hover:bg-white hover:shadow-sm"
+                >
+                  <span className="truncate">
+                    {assignmentForm.officer1Id
+                      ? assignedOfficers.find(o => o.id === assignmentForm.officer1Id)?.name
+                      : 'Select Officer 1'}
+                  </span>
+                  <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${openDropdown === 'officer1' ? 'rotate-180' : ''}`} />
+                </button>
 
-              {openDropdown === 'officer2' && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-                  <input
-                    type="text"
-                    placeholder="Search by name or ID..."
-                    value={search.officer2}
-                    onChange={(e) => setSearch({ ...search, officer2: e.target.value })}
-                    className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
-                    autoFocus
-                  />
-                  <div className="max-h-60 overflow-y-auto">
-                    {assignedOfficers
-                      .filter(o =>
-                        o.id !== assignmentForm.officer1Id &&
-                        !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
-                        (o.name.toLowerCase().includes(search.officer2.toLowerCase()) ||
-                          (o.employeeId && o.employeeId.toLowerCase().includes(search.officer2.toLowerCase())))
-                      )
-                      .map(o => (
-                        <button
-                          key={o.id}
-                          type="button"
-                          onClick={() => {
-                            handleSelectChange('officer2', o.id);
-                            setOpenDropdown(null);
-                            setSearch({ ...search, officer2: '' });
-                          }}
-                          className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
-                        >
-                          <span className="font-medium text-gray-500">{o.name}</span>
-                          <span className="text-gray-500 text-xs">({o.employeeId || 'No ID'})</span>
-                        </button>
-                      ))}
-                    {assignedOfficers
-                      .filter(o =>
-                        o.id !== assignmentForm.officer1Id &&
-                        !assignmentsOnSelectedDate.some(a => a.officer1Id === o.id || a.officer2Id === o.id) &&
-                        (o.name.toLowerCase().includes(search.officer2.toLowerCase()) ||
-                          (o.employeeId && o.employeeId.toLowerCase().includes(search.officer2.toLowerCase())))
-                      ).length === 0 && (
-                        <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
-                          No officers found
-                        </div>
-                      )}
+                {openDropdown === 'officer1' && (
+                  <div className="absolute z-[60] mt-2 w-full bg-white/95 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <input
+                      type="text"
+                      placeholder="Search officer..."
+                      value={search.officer1}
+                      onChange={(e) => setSearch({ ...search, officer1: e.target.value })}
+                      className="w-full px-5 py-4 bg-gray-50/50 border-b border-gray-100 focus:outline-none focus:bg-white text-sm font-medium"
+                      autoFocus
+                    />
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {assignedOfficers
+                        .filter(o =>
+                          o.id !== assignmentForm.officer2Id &&
+                          !assignments.some(a =>
+                            a.date.split('T')[0] === assignmentForm.date &&
+                            (a.officer1Id === o.id || a.officer2Id === o.id) &&
+                            a.id !== editingId
+                          ) &&
+                          (o.name.toLowerCase().includes(search.officer1.toLowerCase()) ||
+                            (o.employeeId && o.employeeId.toLowerCase().includes(search.officer1.toLowerCase())))
+                        )
+                        .map(o => (
+                          <button
+                            key={o.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectChange('officer1', o.id);
+                              setOpenDropdown(null);
+                              setSearch(prev => ({ ...prev, officer1: '' }));
+                            }}
+                            className="w-full px-5 py-3.5 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-all duration-150 border-b border-gray-50 last:border-0"
+                          >
+                            <span className="font-bold text-gray-700">{o.name}</span>
+                            <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-lg uppercase tracking-wider">{o.employeeId}</span>
+                          </button>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <input type="tel" name="officer2Phone" value={assignmentForm.officer2Phone} onChange={handlePhoneChange} placeholder="Phone (optional override)" className="w-full px-3 py-2 border border-teal-300 rounded-lg mb-2 text-sm" />
-            {/* OFFICER 2 SHIFT — BIDIRECTIONAL */}
-            <select
-              name="officer2Shift"
-              value={assignmentForm.officer2Shift}
-              onChange={handleShiftChange}
-              onMouseDown={(e) => {
-                if (!dateSelected) {
-                  e.preventDefault();
-                  showDateWarning();
-                }
-              }}
-              disabled={!dateSelected}
-              className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm"
-              required
-            >
-              <option value="">Select Shift</option>
-              <option value="I" disabled={assignmentForm.officer1Shift === 'I'}>Shift I</option>
-              <option value="II" disabled={assignmentForm.officer1Shift === 'II'}>Shift II</option>
-            </select>
-          </div>
-        </div>
+              <input
+                type="tel"
+                name="officer1Phone"
+                value={assignmentForm.officer1Phone}
+                onChange={handlePhoneChange}
+                placeholder="Phone (optional override)"
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm outline-none transition-all hover:bg-white focus:ring-4 focus:ring-emerald-500/10 font-medium"
+              />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-          {/* TEAM LEADER 1 */}
-          <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200">
-            <h3 className="text-base lg:text-lg font-bold text-purple-800 mb-800 mb-3">Team Leader 1</h3>
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === 'tl1' ? null : 'tl1')}
+              <select
+                name="officer1Shift"
+                value={assignmentForm.officer1Shift}
+                onChange={handleShiftChange}
                 disabled={!dateSelected}
-                className="w-full px-3 py-2 border-1 border-purple-300 rounded-lg bg-purple-50 text-sm text-left mb-2
-               disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
-               flex justify-between items-center"
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm font-bold text-gray-700 outline-none transition-all hover:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                required
               >
-                <span className="truncate">
-                  {assignmentForm.tl1Id
-                    ? teamLeaders.find(tl => tl.id === assignmentForm.tl1Id)?.name
-                    : 'Select Team Leader 1'}
-                </span>
-                <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {openDropdown === 'tl1' && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-                  <input
-                    type="text"
-                    placeholder="Search by name or ID..."
-                    value={search.tl1}
-                    onChange={(e) => setSearch({ ...search, tl1: e.target.value })}
-                    className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
-                    autoFocus
-                  />
-                  <div className="max-h-60 overflow-y-auto">
-                    {teamLeaders
-                      .filter(tl =>
-                        tl.id !== assignmentForm.tl2Id &&
-                        !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
-                        (tl.name.toLowerCase().includes(search.tl1.toLowerCase()) ||
-                          (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl1.toLowerCase())))
-                      )
-                      .map(tl => (
-                        <button
-                          key={tl.id}
-                          type="button"
-                          onClick={() => {
-                            handleSelectChange('tl1', tl.id);
-                            setOpenDropdown(null);
-                            setSearch({ ...search, tl1: '' });
-                          }}
-                          className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
-                        >
-                          <span className="font-medium text-gray-500">{tl.name}</span>
-                          <span className="text-gray-500 text-xs">({tl.employeeId || 'No ID'})</span>
-                        </button>
-                      ))}
-                    {teamLeaders
-                      .filter(tl =>
-                        tl.id !== assignmentForm.tl2Id &&
-                        !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
-                        (tl.name.toLowerCase().includes(search.tl1.toLowerCase()) ||
-                          (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl1.toLowerCase())))
-                      ).length === 0 && (
-                        <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
-                          No team leaders found
-                        </div>
-                      )}
-                  </div>
-                </div>
-              )}
+                <option value="">Select Shift</option>
+                <option value="I" disabled={assignmentForm.officer2Shift === 'I'}>Shift I (Morning)</option>
+                <option value="II" disabled={assignmentForm.officer2Shift === 'II'}>Shift II (Afternoon)</option>
+              </select>
             </div>
-
-            <input
-              type="tel"
-              name="tl1Phone"
-              value={assignmentForm.tl1Phone}
-              onChange={handlePhoneChange}
-              placeholder="Phone (optional override)"
-              className="w-full px-3 py-2 border border-purple-300 rounded-lg mb-2 text-sm"
-            />
-
-            {/* TL1 SHIFT — BIDIRECTIONAL */}
-            <select
-              name="tl1Shift"
-              value={assignmentForm.tl1Shift}
-              onChange={handleShiftChange}
-              onMouseDown={(e) => {
-                if (!dateSelected) {
-                  e.preventDefault();
-                  showDateWarning();
-                }
-              }}
-              disabled={!dateSelected}
-              className="w-full px-3 py-2 border border-purple-300 rounded-lg text-sm"
-              required
-            >
-              <option value="">Select Shift</option>
-              <option value="I" disabled={assignmentForm.tl2Shift === 'I'}>Shift I</option>
-              <option value="II" disabled={assignmentForm.tl2Shift === 'II'}>Shift II</option>
-            </select>
           </div>
 
-          {/* TEAM LEADER 2 */}
-          <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-200">
-            <h3 className="text-base lg:text-lg font-bold text-pink-800 mb-3">Team Leader 2</h3>
+          <div className="bg-white/50 backdrop-blur-sm p-8 rounded-[2.5rem] border border-white/60 shadow-xl shadow-teal-900/5 transition-all hover:shadow-teal-900/10 relative z-20">
+            <h3 className="text-lg font-black text-teal-800 mb-6 flex items-center">
+              <div className="w-2 h-7 bg-teal-500 rounded-full mr-3" />
+              Officer 2
+            </h3>
+            <div className="space-y-4">
+              <div className="relative" ref={officer2Ref}>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'officer2' ? null : 'officer2')}
+                  disabled={!dateSelected}
+                  className="w-full px-5 py-4 border border-slate-200 rounded-2xl bg-white/50 text-sm text-left disabled:bg-gray-50 disabled:text-gray-400 font-bold text-gray-700 flex justify-between items-center transition-all hover:bg-white hover:shadow-sm"
+                >
+                  <span className="truncate">
+                    {assignmentForm.officer2Id
+                      ? assignedOfficers.find(o => o.id === assignmentForm.officer2Id)?.name
+                      : 'Select Officer 2'}
+                  </span>
+                  <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${openDropdown === 'officer2' ? 'rotate-180' : ''}`} />
+                </button>
 
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === 'tl2' ? null : 'tl2')}
-                disabled={!dateSelected}
-                className="w-full px-3 py-2 border-1 border-pink-300 rounded-lg bg-pink-50 text-sm text-left mb-2
-               disabled:bg-gray-100 disabled:text-gray-500 disabled:border-gray-300 font-semibold text-gray-500
-               flex justify-between items-center"
-              >
-                <span className="truncate">
-                  {assignmentForm.tl2Id
-                    ? teamLeaders.find(tl => tl.id === assignmentForm.tl2Id)?.name
-                    : 'Select Team Leader 2'}
-                </span>
-                <svg className="h-4 w-4 text-gray-900 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {openDropdown === 'tl2' && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-                  <input
-                    type="text"
-                    placeholder="Search by name or ID..."
-                    value={search.tl2}
-                    onChange={(e) => setSearch({ ...search, tl2: e.target.value })}
-                    className="w-full px-5 py-3 bg-gray-50 border-b border-gray-200 focus:outline-none focus:bg-white text-sm placeholder-gray-500 font-medium"
-                    autoFocus
-                  />
-                  <div className="max-h-60 overflow-y-auto">
-                    {teamLeaders
-                      .filter(tl =>
-                        tl.id !== assignmentForm.tl1Id &&
-                        !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
-                        (tl.name.toLowerCase().includes(search.tl2.toLowerCase()) ||
-                          (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl2.toLowerCase())))
-                      )
-                      .map(tl => (
-                        <button
-                          key={tl.id}
-                          type="button"
-                          onClick={() => {
-                            handleSelectChange('tl2', tl.id);
-                            setOpenDropdown(null);
-                            setSearch({ ...search, tl2: '' });
-                          }}
-                          className="w-full px-5 py-3 text-left flex justify-between items-center text-sm hover:bg-emerald-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
-                        >
-                          <span className="font-medium text-gray-500">{tl.name}</span>
-                          <span className="text-gray-500 text-xs">({tl.employeeId || 'No ID'})</span>
-                        </button>
-                      ))}
-                    {teamLeaders
-                      .filter(tl =>
-                        tl.id !== assignmentForm.tl1Id &&
-                        !assignmentsOnSelectedDate.some(a => a.tl1Id === tl.id || a.tl2Id === tl.id) &&
-                        (tl.name.toLowerCase().includes(search.tl2.toLowerCase()) ||
-                          (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl2.toLowerCase())))
-                      ).length === 0 && (
-                        <div className="px-5 py-8 text-center text-gray-500 text-sm italic">
-                          No team leaders found
-                        </div>
-                      )}
+                {openDropdown === 'officer2' && (
+                  <div className="absolute z-[60] mt-2 w-full bg-white/95 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <input
+                      type="text"
+                      placeholder="Search officer..."
+                      value={search.officer2}
+                      onChange={(e) => setSearch({ ...search, officer2: e.target.value })}
+                      className="w-full px-5 py-4 bg-gray-50/50 border-b border-gray-100 focus:outline-none focus:bg-white text-sm font-medium"
+                      autoFocus
+                    />
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {assignedOfficers
+                        .filter(o =>
+                          o.id !== assignmentForm.officer1Id &&
+                          !assignments.some(a =>
+                            a.date.split('T')[0] === assignmentForm.date &&
+                            (a.officer1Id === o.id || a.officer2Id === o.id) &&
+                            a.id !== editingId
+                          ) &&
+                          (o.name.toLowerCase().includes(search.officer2.toLowerCase()) ||
+                            (o.employeeId && o.employeeId.toLowerCase().includes(search.officer2.toLowerCase())))
+                        )
+                        .map(o => (
+                          <button
+                            key={o.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectChange('officer2', o.id);
+                              setOpenDropdown(null);
+                              setSearch(prev => ({ ...prev, officer2: '' }));
+                            }}
+                            className="w-full px-5 py-3.5 text-left flex justify-between items-center text-sm hover:bg-teal-50 transition-all duration-150 border-b border-gray-50 last:border-0"
+                          >
+                            <span className="font-bold text-gray-700">{o.name}</span>
+                            <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-lg uppercase tracking-wider">{o.employeeId}</span>
+                          </button>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              <input
+                type="tel"
+                name="officer2Phone"
+                value={assignmentForm.officer2Phone}
+                onChange={handlePhoneChange}
+                placeholder="Phone (optional override)"
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm outline-none transition-all hover:bg-white focus:ring-4 focus:ring-teal-500/10 font-medium"
+              />
+
+              <select
+                name="officer2Shift"
+                value={assignmentForm.officer2Shift}
+                onChange={handleShiftChange}
+                disabled={!dateSelected}
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm font-bold text-gray-700 outline-none transition-all hover:bg-white focus:ring-4 focus:ring-teal-500/10"
+                required
+              >
+                <option value="">Select Shift</option>
+                <option value="I" disabled={assignmentForm.officer1Shift === 'I'}>Shift I (Morning)</option>
+                <option value="II" disabled={assignmentForm.officer1Shift === 'II'}>Shift II (Afternoon)</option>
+              </select>
             </div>
+          </div>
 
-            <input
-              type="tel"
-              name="tl2Phone"
-              value={assignmentForm.tl2Phone}
-              onChange={handlePhoneChange}
-              placeholder="Phone (optional override)"
-              className="w-full px-3 py-2 border border-pink-300 rounded-lg mb-2 text-sm"
-            />
+          {/* Team Leader Sections */}
+          <div className="bg-white/50 backdrop-blur-sm p-8 rounded-[2.5rem] border border-white/60 shadow-xl shadow-purple-900/5 transition-all hover:shadow-purple-900/10 relative z-10">
+            <h3 className="text-lg font-black text-purple-800 mb-6 flex items-center">
+              <div className="w-2 h-7 bg-purple-500 rounded-full mr-3" />
+              Team Leader 1
+            </h3>
+            <div className="space-y-4">
+              <div className="relative" ref={tl1Ref}>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'tl1' ? null : 'tl1')}
+                  disabled={!dateSelected}
+                  className="w-full px-5 py-4 border border-slate-200 rounded-2xl bg-white/50 text-sm text-left disabled:bg-gray-50 disabled:text-gray-400 font-bold text-gray-700 flex justify-between items-center transition-all hover:bg-white hover:shadow-sm"
+                >
+                  <span className="truncate">
+                    {assignmentForm.tl1Id
+                      ? teamLeaders.find(tl => tl.id === assignmentForm.tl1Id)?.name
+                      : 'Select Team Leader 1'}
+                  </span>
+                  <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${openDropdown === 'tl1' ? 'rotate-180' : ''}`} />
+                </button>
 
-            {/* TL2 SHIFT — BIDIRECTIONAL */}
-            <select
-              name="tl2Shift"
-              value={assignmentForm.tl2Shift}
-              onChange={handleShiftChange}
-              onMouseDown={(e) => {
-                if (!dateSelected) {
-                  e.preventDefault();
-                  showDateWarning();
-                }
-              }}
-              disabled={!dateSelected}
-              className="w-full px-3 py-2 border border-pink-300 rounded-lg text-sm"
-              required
-            >
-              <option value="">Select Shift</option>
-              <option value="I" disabled={assignmentForm.tl1Shift === 'I'}>Shift I</option>
-              <option value="II" disabled={assignmentForm.tl1Shift === 'II'}>Shift II</option>
-            </select>
+                {openDropdown === 'tl1' && (
+                  <div className="absolute z-[60] mt-2 w-full bg-white/95 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <input
+                      type="text"
+                      placeholder="Search team leader..."
+                      value={search.tl1}
+                      onChange={(e) => setSearch({ ...search, tl1: e.target.value })}
+                      className="w-full px-5 py-4 bg-gray-50/50 border-b border-gray-100 focus:outline-none focus:bg-white text-sm font-medium"
+                      autoFocus
+                    />
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {teamLeaders
+                        .filter(tl =>
+                          tl.id !== assignmentForm.tl2Id &&
+                          (tl.name.toLowerCase().includes(search.tl1.toLowerCase()) ||
+                            (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl1.toLowerCase())))
+                        )
+                        .map(tl => (
+                          <button
+                            key={tl.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectChange('tl1', tl.id);
+                              setOpenDropdown(null);
+                              setSearch({ ...search, tl1: '' });
+                            }}
+                            className="w-full px-5 py-3.5 text-left flex justify-between items-center text-sm hover:bg-purple-50 transition-all duration-150 border-b border-gray-50 last:border-0"
+                          >
+                            <span className="font-bold text-gray-700">{tl.name}</span>
+                            <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-lg uppercase tracking-wider">{tl.employeeId}</span>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <input
+                type="tel"
+                name="tl1Phone"
+                value={assignmentForm.tl1Phone}
+                onChange={handlePhoneChange}
+                placeholder="Phone (optional override)"
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm outline-none transition-all hover:bg-white focus:ring-4 focus:ring-purple-500/10 font-medium"
+              />
+
+              <select
+                name="tl1Shift"
+                value={assignmentForm.tl1Shift}
+                onChange={handleShiftChange}
+                disabled={!dateSelected}
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm font-bold text-gray-700 outline-none transition-all hover:bg-white focus:ring-4 focus:ring-purple-500/10"
+                required
+              >
+                <option value="">Select Shift</option>
+                <option value="I" disabled={assignmentForm.tl2Shift === 'I'}>Shift I (Morning)</option>
+                <option value="II" disabled={assignmentForm.tl2Shift === 'II'}>Shift II (Afternoon)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-white/50 backdrop-blur-sm p-8 rounded-[2.5rem] border border-white/60 shadow-xl shadow-pink-900/5 transition-all hover:shadow-pink-900/10 relative z-10">
+            <h3 className="text-lg font-black text-pink-800 mb-6 flex items-center">
+              <div className="w-2 h-7 bg-pink-500 rounded-full mr-3" />
+              Team Leader 2
+            </h3>
+            <div className="space-y-4">
+              <div className="relative" ref={tl2Ref}>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'tl2' ? null : 'tl2')}
+                  disabled={!dateSelected}
+                  className="w-full px-5 py-4 border border-slate-200 rounded-2xl bg-white/50 text-sm text-left disabled:bg-gray-50 disabled:text-gray-400 font-bold text-gray-700 flex justify-between items-center transition-all hover:bg-white hover:shadow-sm"
+                >
+                  <span className="truncate">
+                    {assignmentForm.tl2Id
+                      ? teamLeaders.find(tl => tl.id === assignmentForm.tl2Id)?.name
+                      : 'Select Team Leader 2'}
+                  </span>
+                  <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${openDropdown === 'tl2' ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openDropdown === 'tl2' && (
+                  <div className="absolute z-[60] mt-2 w-full bg-white/95 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <input
+                      type="text"
+                      placeholder="Search team leader..."
+                      value={search.tl2}
+                      onChange={(e) => setSearch({ ...search, tl2: e.target.value })}
+                      className="w-full px-5 py-4 bg-gray-50/50 border-b border-gray-100 focus:outline-none focus:bg-white text-sm font-medium"
+                      autoFocus
+                    />
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {teamLeaders
+                        .filter(tl =>
+                          tl.id !== assignmentForm.tl1Id &&
+                          (tl.name.toLowerCase().includes(search.tl2.toLowerCase()) ||
+                            (tl.employeeId && tl.employeeId.toLowerCase().includes(search.tl2.toLowerCase())))
+                        )
+                        .map(tl => (
+                          <button
+                            key={tl.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectChange('tl2', tl.id);
+                              setOpenDropdown(null);
+                              setSearch({ ...search, tl2: '' });
+                            }}
+                            className="w-full px-5 py-3.5 text-left flex justify-between items-center text-sm hover:bg-pink-50 transition-all duration-150 border-b border-gray-50 last:border-0"
+                          >
+                            <span className="font-bold text-gray-700">{tl.name}</span>
+                            <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-lg uppercase tracking-wider">{tl.employeeId}</span>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <input
+                type="tel"
+                name="tl2Phone"
+                value={assignmentForm.tl2Phone}
+                onChange={handlePhoneChange}
+                placeholder="Phone (optional override)"
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm outline-none transition-all hover:bg-white focus:ring-4 focus:ring-pink-500/10 font-medium"
+              />
+
+              <select
+                name="tl2Shift"
+                value={assignmentForm.tl2Shift}
+                onChange={handleShiftChange}
+                disabled={!dateSelected}
+                className="w-full px-5 py-3.5 border border-slate-200 bg-white/50 rounded-2xl text-sm font-bold text-gray-700 outline-none transition-all hover:bg-white focus:ring-4 focus:ring-pink-500/10"
+                required
+              >
+                <option value="">Select Shift</option>
+                <option value="I" disabled={assignmentForm.tl1Shift === 'I'}>Shift I (Morning)</option>
+                <option value="II" disabled={assignmentForm.tl1Shift === 'II'}>Shift II (Afternoon)</option>
+              </select>
+            </div>
           </div>
         </div>
 
-
-
-        <button type="submit" className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white py-3 lg:py-4 rounded-xl font-bold hover:from-fuchsia-700 hover:to-purple-700 transition-all duration-300 text-sm lg:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-        {editingId ? 'Update Assignment' : 'Update Assignment'}
-      </button>
+        <button
+          type="submit"
+          className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white py-5 rounded-[2rem] font-black hover:from-fuchsia-700 hover:to-purple-700 transition-all duration-300 text-lg shadow-2xl shadow-purple-900/20 transform hover:-translate-y-1 active:scale-[0.98] mt-8 flex items-center justify-center space-x-3"
+        >
+          <DocumentArrowUpIcon className="h-6 w-6" />
+          <span>{editingId ? 'Update Assignment' : 'Confirm Assignment'}</span>
+        </button>
       </form>
-
-     
     </div>
   );
 
@@ -1288,15 +1476,25 @@ const CurrentAssignmentsPage = () => {
       {renderViewModal()}
       <style>{`
 @keyframes blob {
-  0 % { transform: translate(0px, 0px) scale(1); }
-  33 % { transform: translate(30px, -50px) scale(1.1); }
-  66 % { transform: translate(-20px, 20px) scale(0.9); }
-  100 % { transform: translate(0px, 0px) scale(1); }
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
 }
-        .animate - blob { animation: blob 7s infinite; }
-        .animation - delay - 2000 { animation - delay: 2s; }
-        .animation - delay - 4000 { animation - delay: 4s; }
+.animate-blob { animation: blob 7s infinite; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
 `}</style>
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        type={modal.type}
+        title={modal.title}
+        message={modal.message}
+        onConfirm={modal.onConfirm}
+        confirmText={modal.confirmText}
+        cancelText={modal.cancelText}
+      />
 
     </div>
   );
