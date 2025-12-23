@@ -13,6 +13,10 @@ import branchRoutes from './routes/branch.route.js';
 import { seedUsers } from './utils/seed.js';
 import { prisma } from './utils/prismaClient.js';
 import auth from './routes/auth.route.js';
+import Memo from './routes/memo.route.js'
+import('./jobs/copyDailyAssignments.js').then(module => {
+  module.default();
+});
 
 const app = express();
 
@@ -22,6 +26,8 @@ app.use((req, res, next) => {
   console.log("HEADERS →", req.headers["content-type"]);
   next();
 });
+
+// Start the daily assignment copy job
 
 // CORS — THIS IS THE MOST IMPORTANT FIX
 app.use(cors({
@@ -41,6 +47,7 @@ app.use('/api/users', usersRoute);
 app.use('/api/assignments', assignmentsRoute);
 app.use('/api/auth', auth);
 app.use('/api/branches', branchRoutes)
+app.use('/api/memos', Memo);
 
 // Seed route (for development - remove in production)
 app.post('/api/seed', async (req, res) => {

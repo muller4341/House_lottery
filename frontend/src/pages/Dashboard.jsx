@@ -40,6 +40,15 @@ const Dashboard = () => {
     //   iconBgColor: "bg-pink-50",
     //   shadowColor: "shadow-pink-500/20",
     // },
+    {
+  icon: DocumentTextIcon,  // ← Best icon for memo / official document
+  title: "Memo",
+  path: "/memo",
+  color: "from-amber-600 to-orange-600",           // Warm professional tone
+  iconColor: "text-amber-600",
+  iconBgColor: "bg-amber-50",
+  shadowColor: "shadow-amber-500/20",
+},
 
     ...(user?.role === "CENTRAL_KYC_MANAGER"
       ? [
@@ -93,6 +102,7 @@ const Dashboard = () => {
           iconBgColor: "bg-emerald-50",
           shadowColor: "shadow-emerald-500/20",
         },
+       
          {
       icon: ChartBarIcon,
       title: "Assignment History",
@@ -125,20 +135,12 @@ const Dashboard = () => {
           iconBgColor: "bg-yellow-50",
           shadowColor: "shadow-yellow-500/20",
         },
-         {
-      icon: ClipboardDocumentListIcon,
-      title: "View Assignments",
-      path: "/assignment-view",
-      color: "from-blue-600 to-cyan-600",
-      iconColor: "text-blue-600",
-      iconBgColor: "bg-blue-50",
-      shadowColor: "shadow-blue-500/20",
-    },
+         
       ]
       : []),
 
 
-      ...(user?.role === "USER"
+      ...(user?.role === "USER"|| user?.role === "OFFICER"
       ? [
         {
       icon: ClipboardDocumentListIcon,
@@ -190,9 +192,11 @@ const Dashboard = () => {
               <p className="text-slate-600 font-medium">Here's what's happening today</p>
             </div>
             <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm">
-              <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-sm font-bold text-slate-700 tracking-wide">{formatRole(user.role)}</span>
-            </div>
+  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+  <span className="text-sm font-bold text-slate-700 tracking-wide">
+    {user.role === 'CENTRAL_KYC_MANAGER' ? 'Central KYC Manager' : formatRole(user.role)}
+  </span>
+</div>
           </div>
         </header>
 

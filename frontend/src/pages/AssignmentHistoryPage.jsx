@@ -53,25 +53,26 @@ const AssignmentHistoryPage = () => {
   ];
 
   const fetchAssignments = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/assignments');
-      if (response.ok) {
-        const data = await response.json();
-        // Show ALL assignments (past, today, future)
-        setAssignments(data.assignments || []);
-        setFilteredAssignments(data.assignments || []);
-      } else {
-        throw new Error('Failed to fetch assignments');
-      }
-    } catch (err) {
-      console.error('Error fetching assignments:', err);
-      setError('Failed to load assignments. Please refresh.');
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null);
+  try {
+    // ← This is the key change: call the history endpoint
+    const response = await fetch('/api/assignments/history');
+    if (response.ok) {
+      const data = await response.json();
+      // Show ALL assignments (past, today, future)
+      setAssignments(data.assignments || []);
+      setFilteredAssignments(data.assignments || []);
+    } else {
+      throw new Error('Failed to fetch assignments');
     }
-  };
+  } catch (err) {
+    console.error('Error fetching assignments:', err);
+    setError('Failed to load assignments. Please refresh.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchAssignments();

@@ -65,8 +65,8 @@ const Navbar = () => {
               <BuildingLibraryIcon className="w-6 h-6 text-white" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-md">
-                CBE KYC
+              <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-md">
+                CBE Central KYC
               </h1>
               <span className="text-[10px] sm:text-xs font-bold text-yellow-600 tracking-widest  mt-0.5 group-hover:text-white transition-colors capitalize">
                 Commercial Bank of Ethiopia
