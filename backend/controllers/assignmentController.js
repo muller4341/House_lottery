@@ -1,9 +1,4 @@
-// controllers/assignmentController.js
-// Complete: Full validations, user checks, audit logs. Fixed schema field set.
-// Create/Update: Validates duplicates, users/shifts. Sends JSON errors for frontend alerts.
-// Get: Pagination, full includes.
-// Bulk: Row-by-row errors.
-// Export: Full columns.
+
 
 import { prisma } from '../utils/prismaClient.js';
 import XLSX from 'xlsx';
@@ -564,7 +559,7 @@ export const updateAssignment = async (req, res) => {
 
 export const getAssignments = async (req, res) => {
   try {
-    const { page = 1, limit = 10, date } = req.query;
+    const { page = 1, limit = 10000, date } = req.query;
     const skip = (page - 1) * limit;
 
     // BUILD WHERE FILTER — THIS IS THE FIX
@@ -860,5 +855,83 @@ export const exportToCSV = async (req, res) => {
   } catch (error) {
     console.error('Export error:', error);
     res.status(500).json({ error: 'Export failed' });
+  }
+};
+
+export const getHistoryAssignments = async (req, res) => {
+  try {
+    const { page = 1, limit = 100000, date, all } = req.query;
+    const skip = (page - 1) * limit;
+
+    // BUILD WHERE FILTER
+    let where = {};
+
+    // If ?all=true → return ALL assignments (past, present, future) — for History page
+    if (all === 'true') {
+  where = {};
+  limit = 10000; // or remove take/skip completely
+  skip = 0;
+}
+    // If ?date= provided → filter by that specific day
+    else if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      where.date = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+    }
+    
+    else {
+      
+    }
+
+    const assignments = await prisma.assignment.findMany({
+      where,
+      skip: parseInt(skip),
+      take: parseInt(limit),
+      orderBy: { date: 'desc' },
+      include: {
+        branch: { 
+          select: { name: true, accountOfficerId: true } 
+        },
+        officer1: { select: { name: true, phone: true } },
+        officer2: { select: { name: true, phone: true } },
+        tl1: { select: { name: true, phone: true } },
+        tl2: { select: { name: true, phone: true } }
+      }
+    });
+
+    const total = await prisma.assignment.count({ where });
+
+    // Enrich data (your excellent existing logic)
+    const enrichedAssignments = assignments.map(a => ({
+      ...a,
+      branchIds: a.branchIds ? a.branchIds.split(',').map(id => id.trim()) : [],
+      branchNames: a.branchNames || a.branch?.name || '—',
+      accountOfficerEmployeeIds: a.accountOfficerEmployeeIds 
+        ? a.accountOfficerEmployeeIds.split(',').map(id => id.trim()) 
+        : (a.branch?.accountOfficerId ? [a.branch.accountOfficerId] : []),
+      branchName: a.branchNames?.split(', ')[0]?.trim() || a.branch?.name || '—',
+      accountOfficerEmployeeId: a.accountOfficerEmployeeIds?.split(', ')[0]?.trim() || a.branch?.accountOfficerId || '—',
+      officer1Phone: a.officer1Phone || a.officer1?.phone || '—',
+      officer2Phone: a.officer2Phone || a.officer2?.phone || '—',
+      tl1Phone: a.tl1Phone || a.tl1?.phone || '—',
+      tl2Phone: a.tl2Phone || a.tl2?.phone || '—'
+    }));
+
+    res.json({
+      assignments: enrichedAssignments,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+  } catch (error) {
+    console.error('Get assignments error:', error);
+    res.status(500).json({ error: 'Failed to fetch assignments' });
   }
 };

@@ -9,6 +9,7 @@ const ProtectedRoute = ({ children }) => {
   const dispatch = useDispatch();
   const { user, loading } = useSelector(state => state.user);
   const location = useLocation();
+  const allowedUserPaths = ['/assignment-view', '/memo'];
 
   useEffect(() => {
     if (!user && !loading) {
@@ -29,10 +30,9 @@ const ProtectedRoute = ({ children }) => {
   }
 
   /** ⭐ Only redirect USER role when NOT on assignment-view */
-  if (user.role === 'USER' && location.pathname !== '/assignment-view') {
-    return <Navigate to="/assignment-view" replace />;
-  }
-
+ if (user.role === 'USER' && !allowedUserPaths.includes(location.pathname)) {
+  return <Navigate to="/assignment-view" replace />;
+}
   return children;
 };
 

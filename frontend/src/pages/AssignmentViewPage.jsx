@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckIcon, ArrowLeftIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ArrowLeftIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, ClipboardDocumentCheckIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import * as XLSX from 'xlsx';   // ← Only new import
 import { useSelector } from 'react-redux';
 
@@ -26,6 +26,7 @@ const AssignmentViewPage = () => {
   const [filterId, setFilterId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [latestMemo, setLatestMemo] = useState(null);
   const { user, loading: userLoading } = useSelector((state) => state.user);
 
   const today = new Date();
@@ -55,8 +56,23 @@ const AssignmentViewPage = () => {
     }
   };
 
+  const fetchLatestMemo = async () => {
+    try {
+      const response = await fetch('/api/memos');
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setLatestMemo(data[0]); // Memos are sorted by createdAt descending
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching latest memo:', err);
+    }
+  };
+
   useEffect(() => {
     fetchAssignments();
+    fetchLatestMemo();
   }, []);
 
   useEffect(() => {
@@ -230,6 +246,40 @@ const AssignmentViewPage = () => {
                 </button>
               </div>
             </div>
+
+            {/* Latest Memo Section */}
+            {latestMemo && (
+              <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-lg shadow-purple-900/5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-50 rounded-xl text-amber-600 border border-amber-100">
+                    <DocumentTextIcon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-amber-600 capitalize tracking-wider bg-amber-50 px-2 py-0.5 rounded">Latest Memo</span>
+                      <span className="text-xs text-slate-400">{formatDate(latestMemo.createdAt)}</span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800 line-clamp-1">{latestMemo.title}</h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={() => window.location.href = `/api/memos/${latestMemo.id}/download`}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-900/20 hover:bg-amber-700 transition-all"
+                  >
+                    <ArrowDownTrayIcon className="h-4 w-4" />
+                    Download
+                  </button>
+                  <button
+                    onClick={() => navigate('/memo')}
+                    className="flex-1 sm:flex-none px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all"
+                  >
+                    More
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Cards Header NOT NEEDED as per BranchListPage style which is cleaner, but keeping Title/Search logic minimal */}
 
