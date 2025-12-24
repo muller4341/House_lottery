@@ -29,9 +29,27 @@ const AddUserPage = () => {
     { value: 'CENTRAL_KYC_MANAGER', label: 'Central KYC Manager' }
   ];
 
-  const handleChange = (e) => {
-    setUserForm({ ...userForm, [e.target.name]: e.target.value });
-  };
+ const handleChange = (e) => {
+  let value = e.target.value;
+  const name = e.target.name;
+
+ if (name === 'employeeId') {
+  // Remove any non-digits
+  let digits = value.replace(/\D/g, '');
+  // Remove leading 0 if present (because we show it in UI)
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  // Limit to 5 digits
+  digits = digits.slice(0, 5);
+  value = digits;
+}
+
+  if (name === 'phone') {
+    value = value.replace(/\D/g, '');
+    value = value.slice(0, 10);
+  }
+
+  setUserForm({ ...userForm, [name]: value });
+};
 
   const handleSubmit = async (e) => {
   e.preventDefault();
@@ -45,6 +63,29 @@ const AddUserPage = () => {
     });
     return;
   }
+
+  // Validate Employee ID: must be 6 digits starting with 0
+// Validate Employee ID: must be exactly 5 digits (so full becomes 6 with 0)
+if (userForm.employeeId.length !== 5 || !/^\d{5}$/.test(userForm.employeeId)) {
+  setModal({
+    isOpen: true,
+    type: 'warning',
+    title: 'Invalid Employee ID',
+    message: 'Employee ID must be exactly 5 digits (full ID will be 0 + your input, e.g., 012345).'
+  });
+  return;
+}
+
+// Validate Phone: must be 10 digits starting with 09 or 07
+if (userForm.phone && !/^0[97]\d{8}$/.test(userForm.phone)) {
+  setModal({
+    isOpen: true,
+    type: 'warning',
+    title: 'Invalid Phone Number',
+    message: 'Phone must be 10 digits and start with 09 or 07 (e.g., 0912345678).'
+  });
+  return;
+}
 
   try {
     const res = await fetch('/api/users', {
@@ -155,14 +196,14 @@ const AddUserPage = () => {
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Employee ID <span className="text-rose-500">*</span></label>
                   <input
-                    type="text"
-                    name="employeeId"
-                    value={userForm.employeeId}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3 bg-white/80 border border-white/50 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-100 focus:border-fuchsia-500 transition-all shadow-sm"
-                    placeholder="e.g. 12345"
-                    required
-                  />
+  type="text"
+  name="employeeId"
+  value={userForm.employeeId ? `0${userForm.employeeId}` : ''}
+  onChange={handleChange}
+  placeholder="12345 (5 digits)"
+  required
+  className="block w-full px-4 py-3 bg-white/80 border border-white/50 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-100 focus:border-fuchsia-500 transition-all shadow-sm font-mono tracking-wider"
+/>
                 </div>
 
                 <div>
