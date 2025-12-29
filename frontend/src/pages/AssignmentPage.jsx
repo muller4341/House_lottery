@@ -506,43 +506,80 @@ setTimeout(() => {
   };
 
   const handleBulkUpload = async (e) => {
-    e.preventDefault();
-    if (!bulkFile) {
-  setModal({ isOpen: true, type: 'error', title: 'No File', message: 'Please select a file.' });
-  return;
-}
+  e.preventDefault();
 
-// Success
-setModal({ isOpen: true, type: 'success', title: 'Success!', message: result.message });
+  if (!bulkFile) {
+    setModal({
+      isOpen: true,
+      type: 'error',
+      title: 'No File Selected',
+      message: 'Please select an Excel file to upload.'
+    });
+    return;
+  }
 
-// Error
-setModal({ isOpen: true, type: 'error', title: 'Error', message: error.message });
+  if (!assignmentForm.date) {
+    setModal({
+      isOpen: true,
+      type: 'error',
+      title: 'Date Required',
+      message: 'Please select a date first before uploading bulk assignments.'
+    });
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append('file', bulkFile);
+  const formData = new FormData();
+  formData.append('file', bulkFile);
+  formData.append('date', assignmentForm.date); // Important: send the selected date
 
-    try {
-      const response = await fetch('/api/assignments/bulk', {
-        method: 'POST',
-        body: formData
-      });
+  try {
+    setModal({
+      isOpen: true,
+      type: 'info',
+      title: 'Uploading...',
+      message: 'Processing bulk assignments, please wait...'
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Bulk upload failed');
-      }
+    const response = await fetch('/api/assignments/bulk', {
+      method: 'POST',
+      body: formData
+    });
 
-      const result = await response.json();
-      alert(result.message);
-      if (result.errors.length > 0) {
-        console.log('Bulk errors:', result.errors);
-      }
-      fetchAssignments();
-      setBulkFile(null);
-    } catch (error) {
-      alert(error.message);
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Bulk upload failed');
     }
-  };
+
+    // Success
+    setModal({
+      isOpen: true,
+      type: 'success',
+      title: 'Bulk Upload Successful!',
+      message: result.message || `Successfully created ${result.created || 0} assignments.`
+    });
+
+    if (result.errors && result.errors.length > 0) {
+      console.warn('Partial errors in bulk upload:', result.errors);
+      // Optional: show partial errors in console or future modal
+    }
+
+    // Refresh data
+    await fetchAssignments();
+    await handleDateChange({ target: { value: assignmentForm.date } }); // Refresh assignments on date
+
+    setBulkFile(null);
+    document.querySelector('input[type="file"]').value = ''; // Clear file input
+
+  } catch (error) {
+    setModal({
+      isOpen: true,
+      type: 'error',
+      title: 'Bulk Upload Failed',
+      message: error.message || 'An unexpected error occurred.'
+    });
+  }
+};
 
 
 

@@ -61,8 +61,12 @@ const Navbar = () => {
             to="/dashboard"
             className="group flex items-center space-x-3 transition-transform duration-300 hover:scale-[1.02]"
           >
-            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white/10 rounded-xl flex items-center justify-center shadow-inner border border-white/20 group-hover:bg-white/20 transition-all">
-              <BuildingLibraryIcon className="w-6 h-6 text-white" />
+            <div className="w-32 h-32 sm:w-11 sm:h-11  rounded-xl flex items-center justify-center shadow-inner   transition-all">
+              <img
+                src="/cbe.png"
+                alt="CBE Logo"
+                className="w-32 h-32 object-contain  rounded-full"
+              />
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-md">
