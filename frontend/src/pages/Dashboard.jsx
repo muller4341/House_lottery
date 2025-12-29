@@ -29,20 +29,10 @@ const Dashboard = () => {
   }
 
   const quickActions = [
-   
-   
-    // {
-    //   icon: UsersIcon,
-    //   title: "Customer List",
-    //   path: "/customers",
-    //   color: "from-pink-600 to-rose-600",
-    //   iconColor: "text-pink-600",
-    //   iconBgColor: "bg-pink-50",
-    //   shadowColor: "shadow-pink-500/20",
-    // },
+     
     {
   icon: DocumentTextIcon,  // ← Best icon for memo / official document
-  title: "Memo",
+  title: " KYC Memos",
   path: "/memo",
   color: "from-amber-600 to-orange-600",           // Warm professional tone
   iconColor: "text-amber-600",
