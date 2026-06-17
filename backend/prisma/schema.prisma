@@ -7,116 +7,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ====================== AUTH & ADMIN ======================
 model User {
-  id                 String       @id @default(uuid())
-  employeeId         String       @unique
-  name               String
-  role               Role
-  phone              String?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  status             Int          @default(0)
-  assignedAsOfficer1 Assignment[] @relation("Officer1Assignments")
-  assignedAsOfficer2 Assignment[] @relation("Officer2Assignments")
-  assignedAsTL1      Assignment[] @relation("TL1Assignments")
-  assignedAsTL2      Assignment[] @relation("TL2Assignments")
-  auditLogs          AuditLog[]
-  uploadedDocuments  Document[]
-  memos              Memo[]       @relation("UserMemos")
+  id          String   @id @default(uuid())
+  username    String   @unique
+  email       String   @unique
+  password    String
+  fullName    String
+  role        Role     @default(ADMIN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("users")
 }
 
-model Branch {
-  id               String       @id @default(uuid())
-  name             String
-  accountOfficerId String       @unique
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  assignments      Assignment[]
+// ====================== MAIN ENTITIES ======================
+model House {
+  id           String       @id @default(uuid())
+  houseNumber  String       @unique
+  site         String
+  area         String
+  floor        Int
+  status       HouseStatus  @default(NONE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
-  @@map("branches")
+  lotteryResults LotteryResult[]
+
+  @@map("houses")
+  @@index([site, area])
 }
 
+model Applicant {
+  id        String      @id @default(uuid())
+  username  String      // Full Name
+  site      String
+  area      String
+  status    ApplicantStatus @default(NONE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
+  lotteryResults LotteryResult[]
 
-model Assignment {
-  id                        String    @id @default(uuid())
-  date                      DateTime  @db.Date    // ← THIS IS THE WORK DATE (from your <input type="date">)
-  branchId                  String
-  branchIds                 String                  // "uuid1,uuid2,uuid3"
-  branchName               String                  // "Addis, Adama"
-  branchNames               String                  // "Addis Ababa, Adama, Mekelle"
-  accountOfficerEmployeeId  String                  // first one
-  accountOfficerEmployeeIds String                  // "1234,5678,9012"
-
-  officer1Id     String
-  officer2Id     String
-  tl1Id          String
-  tl2Id          String
-  officer1Phone  String
-  officer2Phone  String
-  tl1Phone       String
-  tl2Phone       String
-  officer1Shift  String
-  officer2Shift  String
-  tl1Shift       String
-  tl2Shift       String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  branch   Branch @relation(fields: [branchId], references: [id])
-  officer1 User   @relation("Officer1Assignments", fields: [officer1Id], references: [id])
-  officer2 User   @relation("Officer2Assignments", fields: [officer2Id], references: [id])
-  tl1      User  @relation("TL1Assignments", fields: [tl1Id], references: [id])
-  tl2      User  @relation("TL2Assignments", fields: [tl2Id], references: [id])
-  documents Document[]
-
-  @@map("assignments")
-}
-model Document {
-  id           String      @id @default(uuid())
-  name         String
-  filePath     String
-  uploadedById String
-  assignmentId String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
-  uploadedBy   User        @relation(fields: [uploadedById], references: [id])
-
-  @@map("documents")
+  @@map("applicants")
+  @@index([site, area])
 }
 
-model AuditLog {
-  id        String   @id @default(uuid())
-  action    String
-  details   String?
-  userId    String
-  entityId  String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+// ====================== LOTTERY RESULTS ======================
+model LotteryResult {
+  id            String         @id @default(uuid())
+  lotteryRunId  String         // Groups all results from one lottery execution
+  username      String
+  site          String
+  area          String
+  floor         Int
+  houseNumber   String
+  status        ResultStatus
+  drawDate      DateTime       @default(now())
 
-  @@map("audit_logs")
+  houseId       String
+  applicantId   String
+
+  house         House          @relation(fields: [houseId], references: [id])
+  applicant     Applicant      @relation(fields: [applicantId], references: [id])
+
+  @@map("lottery_results")
+  @@index([lotteryRunId])
+  @@index([site, area])
 }
 
+// ====================== ENUMS ======================
 enum Role {
-  OFFICER
-  TEAM_LEADER
-  CENTRAL_KYC_MANAGER
+  ADMIN
   USER
 }
 
-model Memo {
-  id           String   @id @default(uuid())
-  title        String
-  filePath     String
-  fileName     String
-  fileSize     Int?
-  uploadedById String
-  createdAt    DateTime @default(now())
-  uploadedBy   User     @relation("UserMemos", fields: [uploadedById], references: [id])
+enum HouseStatus {
+  NONE
+  PROVIDED
+}
 
-  @@map("memos")
+enum ApplicantStatus {
+  NONE
+  WINNER
+  WAITLIST
+}
+
+enum ResultStatus {
+  WINNER
+  WAITLIST
 }
