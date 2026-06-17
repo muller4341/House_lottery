@@ -1,142 +1,197 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { useState, useRef, useEffect } from "react";
-import { signOutSuccess } from "../redux/user/userSlice";
-import {
-  UserCircleIcon,
-  ArrowRightOnRectangleIcon,
-  ChevronDownIcon,
-  BuildingLibraryIcon
-} from "@heroicons/react/24/outline";
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { useState, useRef, useEffect } from 'react';
+import { signOutSuccess } from '../redux/user/userSlice';
+
+const NAV_LINKS = [
+  { to: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { to: '/houses', label: 'Houses', icon: '🏠' },
+  { to: '/applicants', label: 'Applicants', icon: '👥' },
+  { to: '/lottery', label: 'Lottery', icon: '🎡' },
+  { to: '/results', label: 'Results', icon: '📋' },
+];
 
 const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useSelector((state) => state.user);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const displayName = user?.name || "User";
+  const displayName = user?.fullName || user?.username || 'Admin';
   const initials = displayName
-    .split(" ")
+    .split(' ')
     .map((n) => n[0])
-    .join("")
+    .join('')
     .toUpperCase()
     .slice(0, 2);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await fetch("/api/users/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      dispatch(signOutSuccess());
-      navigate("/signin");
-    } catch (err) {
-      dispatch(signOutSuccess());
-      navigate("/signin");
-    } finally {
-      setDropdownOpen(false);
-    }
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    dispatch(signOutSuccess());
+    navigate('/login');
+    setDropdownOpen(false);
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-fuchsia-900/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-purple-900/20 transition-all duration-300">
-      <div className=" mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+    <header style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 100,
+      background: 'rgba(10, 22, 40, 0.95)',
+      backdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(201, 162, 39, 0.2)',
+      boxShadow: '0 4px 30px rgba(0,0,0,0.5)',
+    }}>
+      <div style={{
+        maxWidth: 1400,
+        margin: '0 auto',
+        padding: '0 2rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 68,
+      }}>
 
-          {/* Logo Section */}
-          <Link
-            to="/dashboard"
-            className="group flex items-center space-x-3 transition-transform duration-300 hover:scale-[1.02]"
+        {/* Logo */}
+        <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+          <div style={{
+            width: 40, height: 40,
+            background: 'linear-gradient(135deg, var(--gold-500), var(--gold-300))',
+            borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.4rem',
+            boxShadow: '0 4px 15px rgba(201, 162, 39, 0.3)',
+          }}>🏆</div>
+          <div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f1f5f9', lineHeight: 1.1 }}>
+              House Lottery
+            </div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--gold-400)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Admin Portal
+            </div>
+          </div>
+        </Link>
+
+        {/* Navigation Links */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          {NAV_LINKS.map(({ to, label, icon }) => {
+            const active = location.pathname === to || location.pathname.startsWith(to + '/');
+            return (
+              <Link
+                key={to}
+                to={to}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.5rem 0.875rem',
+                  borderRadius: 8,
+                  fontSize: '0.85rem',
+                  fontWeight: active ? 700 : 500,
+                  color: active ? 'var(--gold-300)' : '#94a3b8',
+                  background: active ? 'rgba(201, 162, 39, 0.12)' : 'transparent',
+                  border: active ? '1px solid rgba(201, 162, 39, 0.25)' : '1px solid transparent',
+                  transition: 'all 0.2s',
+                  textDecoration: 'none',
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#e2e8f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent'; }}}
+              >
+                <span>{icon}</span>
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User Dropdown */}
+        <div ref={dropdownRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.625rem',
+              padding: '0.375rem 0.75rem 0.375rem 0.375rem',
+              borderRadius: 9999,
+              border: dropdownOpen ? '1px solid var(--gold-500)' : '1px solid rgba(255,255,255,0.1)',
+              background: dropdownOpen ? 'rgba(201, 162, 39, 0.1)' : 'rgba(255,255,255,0.05)',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
           >
-            <div className="w-32 h-32 sm:w-11 sm:h-11  rounded-xl flex items-center justify-center shadow-inner   transition-all">
-              <img
-                src="/cbe.png"
-                alt="CBE Logo"
-                className="w-32 h-32 object-contain  rounded-full"
-              />
-            </div>
-            <div className="flex flex-col">
-              <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-md">
-                CBE Central KYC
-              </h1>
-              <span className="text-[10px] sm:text-xs font-bold text-yellow-600 tracking-widest  mt-0.5 group-hover:text-white transition-colors capitalize">
-                Commercial Bank of Ethiopia
-              </span>
-            </div>
-          </Link>
+            <div style={{
+              width: 34, height: 34,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--navy-500), var(--gold-500))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.8rem', fontWeight: 700, color: 'white',
+              flexShrink: 0,
+            }}>{initials}</div>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e2e8f0', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {displayName}
+            </span>
+            <span style={{ color: '#94a3b8', fontSize: '0.7rem', transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+          </button>
 
-          {/* User Profile Section */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className={`
-                flex items-center gap-3 pl-1 pr-1 sm:pr-4 py-1 rounded-full border border-transparent 
-                transition-all duration-300
-                ${dropdownOpen
-                  ? 'bg-white text-fuchsia-900 ring-2 ring-white/50'
-                  : 'bg-white/10 text-white hover:bg-white/20 border-white/10'}
-              `}
-            >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 border-2 border-white/20 flex items-center justify-center shadow-lg">
-                <span className="text-sm font-bold text-white">{initials}</span>
+          {/* Dropdown */}
+          {dropdownOpen && (
+            <div style={{
+              position: 'absolute',
+              right: 0,
+              top: 'calc(100% + 8px)',
+              width: 220,
+              background: 'var(--navy-800)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 12,
+              boxShadow: 'var(--shadow-lg)',
+              overflow: 'hidden',
+              animation: 'fadeInUp 0.15s ease',
+            }}>
+              <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(201,162,39,0.05)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: 4 }}>Signed in as</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f1f5f9' }}>{displayName}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--gold-400)', marginTop: 2 }}>{user?.email}</div>
               </div>
-
-              <div className="hidden sm:flex flex-col items-start px-1">
-                <span className={`text-sm font-bold leading-tight max-w-[120px] truncate ${dropdownOpen ? 'text-fuchsia-900' : 'text-fuchsia-900'}`}>
-                  {displayName}
-                </span>
-                <span className={`text-[10px] font-semibold leading-none mt-0.5 ${dropdownOpen ? 'text-fuchsia-600' : 'text-fuchsia-400'}`}>
-                  {user?.role ? user.role.replace(/_/g, ' ') : 'Officer'}
-                </span>
-              </div>
-
-              <ChevronDownIcon
-                className={`w-4 h-4 transition-transform duration-300 hidden sm:block ${dropdownOpen ? 'rotate-180 text-fuchsia-900' : 'text-fuchsia-200'}`}
-              />
-            </button>
-
-            {/* Dropdown Menu */}
-            <div
-              className={`
-                absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-xl shadow-purple-900/20 border border-slate-100 
-                transform transition-all duration-200 origin-top-right overflow-hidden z-50
-                ${dropdownOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}
-              `}
-            >
-              <div className="p-5 border-b border-slate-100 bg-gradient-to-br from-fuchsia-50/50 to-purple-50/50">
-                <p className="text-sm font-bold text-slate-800">Signed in as</p>
-                <p className="text-sm font-medium text-fuchsia-700 truncate mt-0.5">{displayName}</p>
-                <p className="text-xs text-slate-400 mt-2 font-mono bg-white inline-block px-2 py-1 rounded-md border border-slate-100">
-                  {user?.username}
-                </p>
-              </div>
-
-              <div className="p-2">
-
+              <div style={{ padding: '0.5rem' }}>
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors group mt-1"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.625rem',
+                    padding: '0.625rem 0.75rem',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#f87171',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <ArrowRightOnRectangleIcon className="w-5 h-5 text-rose-400 group-hover:text-rose-600 transition-colors" />
-                  Sign Out
+                  <span>🚪</span> Sign Out
                 </button>
               </div>
             </div>
-          </div>
-
+          )}
         </div>
       </div>
     </header>

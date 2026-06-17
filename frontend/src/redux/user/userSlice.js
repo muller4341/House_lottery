@@ -1,81 +1,43 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
 
-// ASYNC THUNK — ALWAYS GETS LATEST ROLE FROM DATABASE
-// src/redux/user/userSlice.js  (or wherever it is)
-// src/features/user/userSlice.js  ← FINAL VERSION
-// src/features/user/userSlice.js  ← FINAL VERSION
+// Fetch the current authenticated user from the backend
 export const fetchCurrentUser = createAsyncThunk(
-  "user/fetchCurrentUser",
+  'user/fetchCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch("/api/users/me", {
-        method: "GET",
-        credentials: "include",
+      const token = localStorage.getItem('token');
+      if (!token) return rejectWithValue('No token');
+
+      const res = await axios.get('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      // ALWAYS parse JSON first
-      const data = await res.json();
-
-      // Check both status AND data.success
-      if (!res.ok || !data.success) {
-        console.log("fetchCurrentUser failed:", res.status, data);
-        return rejectWithValue(data.message || "Unauthorized");
+      if (!res.data.success) {
+        return rejectWithValue(res.data.message || 'Unauthorized');
       }
 
-      console.log("USER LOADED FROM /api/user/me:", data.user);
-      return data.user;  // ← this goes to fulfilled → state.user = data.user
+      return res.data.user;
     } catch (err) {
-      console.log("fetchCurrentUser error:", err);
-      return rejectWithValue("Network error");
+      return rejectWithValue(err.response?.data?.error || 'Network error');
     }
   }
 );
+
 const initialState = {
-  user: null,        // ← changed from currentUser to user
+  user: null,
   loading: false,
   error: null,
 };
 
 const userSlice = createSlice({
-  name: "user",
+  name: 'user',
   initialState,
   reducers: {
-    signInStart: (state) => {
-      state.loading = true;
-      state.error = null;
-    },
     signInSuccess: (state, action) => {
       state.user = action.payload;
       state.loading = false;
       state.error = null;
-    },
-    signInFail: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-    },
-    updateStart: (state) => {
-      state.loading = true;
-    },
-    updateSuccess: (state, action) => {
-      state.user = action.payload;
-      state.loading = false;
-      state.error = null;
-    },
-    updateFail: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-    },
-    deleteUserStart: (state) => {
-      state.loading = true;
-    },
-    deleteUserSuccess: (state) => {
-      state.user = null;
-      state.loading = false;
-      state.error = null;
-    },
-    deleteUserFail: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
     },
     signOutSuccess: (state) => {
       state.user = null;
@@ -87,6 +49,7 @@ const userSlice = createSlice({
     builder
       .addCase(fetchCurrentUser.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
@@ -96,22 +59,10 @@ const userSlice = createSlice({
       .addCase(fetchCurrentUser.rejected, (state) => {
         state.user = null;
         state.loading = false;
-        state.error = "Session expired";
+        state.error = 'Session expired';
       });
   },
 });
 
-export const {
-  signInStart,
-  signInSuccess,
-  signInFail,
-  updateStart,
-  updateSuccess,
-  updateFail,
-  deleteUserStart,
-  deleteUserSuccess,
-  deleteUserFail,
-  signOutSuccess,
-} = userSlice.actions;
-
+export const { signInSuccess, signOutSuccess } = userSlice.actions;
 export default userSlice.reducer;

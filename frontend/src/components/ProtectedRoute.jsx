@@ -1,15 +1,12 @@
-// components/ProtectedRoute.jsx
+import React from 'react';
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Navigate, useLocation } from 'react-router-dom';
-
+import { Navigate } from 'react-router-dom';
 import { fetchCurrentUser } from '../redux/user/userSlice';
 
 const ProtectedRoute = ({ children }) => {
   const dispatch = useDispatch();
-  const { user, loading } = useSelector(state => state.user);
-  const location = useLocation();
-  const allowedUserPaths = ['/assignment-view', '/memo'];
+  const { user, loading } = useSelector((state) => state.user);
 
   useEffect(() => {
     if (!user && !loading) {
@@ -17,24 +14,41 @@ const ProtectedRoute = ({ children }) => {
     }
   }, [user, loading, dispatch]);
 
-  if (loading || (!user && !loading)) {
+  // While fetching user session, show a loading screen
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-3xl font-bold text-fuchsia-800">Loading...</div>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--navy-950)',
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              border: '3px solid var(--navy-600)',
+              borderTopColor: 'var(--gold-500)',
+              borderRadius: '50%',
+              margin: '0 auto 1rem',
+            }}
+            className="spin-fast"
+          />
+          <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Loading...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/login" replace />;
   }
 
-  /** ⭐ Only redirect USER role when NOT on assignment-view */
- if (user.role === 'USER' && !allowedUserPaths.includes(location.pathname)) {
-  return <Navigate to="/assignment-view" replace />;
-}
   return children;
 };
-
 
 export default ProtectedRoute;

@@ -1,47 +1,69 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const adminController = require('../controllers/adminController');
+import { Router } from 'express';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { verifyToken } from '../middleware/auth.js';
+import {
+  getDashboardStats,
+  getHouses,
+  uploadHouses,
+  getApplicants,
+  uploadApplicants,
+  runLottery,
+  getLotteryResults,
+  getLotteryHistory,
+  downloadResultsExcel,
+} from '../controllers/adminController.js';
 
-const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Multer configuration for Excel uploads
+const router = Router();
+
+// All admin routes require JWT auth
+router.use(verifyToken);
+
+// Multer — Excel only, stored in uploads/
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, path.join(__dirname, '..', 'uploads'));
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-        file.mimetype === 'application/vnd.ms-excel') {
+    const allowedMimes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ];
+    if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel files are allowed!'), false);
+      cb(new Error('Only Excel files (.xlsx, .xls) are allowed.'), false);
     }
-  }
+  },
 });
 
 // Dashboard
-router.get('/dashboard', adminController.getDashboardStats);
+router.get('/dashboard', getDashboardStats);
 
 // Houses
-router.get('/houses', adminController.getHouses);
-router.post('/upload-houses', upload.single('file'), adminController.uploadHouses);
+router.get('/houses', getHouses);
+router.post('/upload-houses', upload.single('file'), uploadHouses);
 
 // Applicants
-router.get('/applicants', adminController.getApplicants);
-router.post('/upload-applicants', upload.single('file'), adminController.uploadApplicants);
+router.get('/applicants', getApplicants);
+router.post('/upload-applicants', upload.single('file'), uploadApplicants);
 
-// Lottery
-router.post('/run-lottery', adminController.runLottery);
-router.get('/results/:runId', adminController.getLotteryResults);
-router.get('/lottery-history', adminController.getLotteryHistory);
-router.get('/results/download/:runId', adminController.downloadResultsExcel);
+// Lottery — NOTE: download must come before :runId to avoid route conflict
+router.post('/run-lottery', runLottery);
+router.get('/lottery-history', getLotteryHistory);
+router.get('/results/download/:runId', downloadResultsExcel);
+router.get('/results/:runId', getLotteryResults);
 
-module.exports = router;
+export default router;

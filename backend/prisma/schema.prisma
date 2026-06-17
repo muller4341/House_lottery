@@ -39,13 +39,13 @@ model House {
 }
 
 model Applicant {
-  id        String      @id @default(uuid())
-  username  String      // Full Name
+  id        String          @id @default(uuid())
+  username  String          // Full Name
   site      String
   area      String
   status    ApplicantStatus @default(NONE)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
   lotteryResults LotteryResult[]
 
@@ -55,21 +55,21 @@ model Applicant {
 
 // ====================== LOTTERY RESULTS ======================
 model LotteryResult {
-  id            String         @id @default(uuid())
-  lotteryRunId  String         // Groups all results from one lottery execution
+  id            String       @id @default(uuid())
+  lotteryRunId  String       // Groups all results from one lottery execution
   username      String
   site          String
   area          String
-  floor         Int
-  houseNumber   String
+  floor         Int?         // nullable — waitlist entries have no house
+  houseNumber   String?      // nullable — waitlist entries have no house
   status        ResultStatus
-  drawDate      DateTime       @default(now())
+  drawDate      DateTime     @default(now())
 
-  houseId       String
+  houseId       String?
   applicantId   String
 
-  house         House          @relation(fields: [houseId], references: [id])
-  applicant     Applicant      @relation(fields: [applicantId], references: [id])
+  house         House?     @relation(fields: [houseId], references: [id])
+  applicant     Applicant  @relation(fields: [applicantId], references: [id])
 
   @@map("lottery_results")
   @@index([lotteryRunId])

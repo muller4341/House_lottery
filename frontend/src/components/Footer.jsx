@@ -1,33 +1,40 @@
-// components/Footer.jsx — FINAL WORKING VERSION
-import { useState, useEffect } from 'react';
+import React from 'react';
 
-// components/Footer.jsx — DYNAMIC YEAR ONLY (2025 → 2026 auto-updates!)
 const Footer = () => {
-  const currentYear = new Date().getFullYear(); // This will be 2025, 2026, etc. automatically
-
+  const year = new Date().getFullYear();
   return (
-    <footer className="bg-fuchsia-900 backdrop-blur-2xl border-t border-fuchsia-800/20 mt-auto">
-      <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-4">
-
-          {/* Dynamic Copyright with Current Year */}
-          <p className="text-sm text-amber-500">
-            © {currentYear}{' '}
-            <span className="font-bold text-amber-500 bg-clip-text ">
-              Commercial Bank of Ethiopia
-            </span>
-            . All rights reserved.
-          </p>
-
-          <p className="text-xs text-amber-500 font-medium tracking-wider">
-            Powered by CBE CKYC Solutions.
-          </p>
-
-          <div className="flex justify-center items-center gap-4 border-t border-amber-500 pt-4">
-            <div className="h-px text-amber-500 flex-1"></div>
-            <span className="text-xs text-amber-500  font-bold">SECURE • FAST • COMPLIANT</span>
-            <div className="h-px text-amber-500 flex-1"></div>
-          </div>
+    <footer style={{
+      background: 'rgba(10, 22, 40, 0.95)',
+      borderTop: '1px solid rgba(201, 162, 39, 0.15)',
+      padding: '1.25rem 2rem',
+    }}>
+      <div style={{
+        maxWidth: 1400,
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.5rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.1rem' }}>🏆</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--gold-400)' }}>
+            House Lottery System
+          </span>
+        </div>
+        <p style={{ fontSize: '0.8rem', color: '#475569', margin: 0 }}>
+          © {year} House Lottery System. All rights reserved.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {['SECURE', 'FAIR', 'TRANSPARENT'].map((tag) => (
+            <span key={tag} style={{
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: '#475569',
+            }}>{tag}</span>
+          ))}
         </div>
       </div>
     </footer>

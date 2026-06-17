@@ -1,4 +1,3 @@
-// components/Layout.jsx
 import React from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -6,16 +5,11 @@ import { Outlet } from 'react-router-dom';
 
 const Layout = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-fuchsia-50 via-rose-50 to-pink-50">
-      {/* Navbar — fixed at top */}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--navy-950)' }}>
       <Navbar />
-
-      {/* Main Content — pushes below navbar */}
-      <main className="flex-1 ">
-        <Outlet />  {/* This shows Dashboard, AssignmentView, etc. */}
+      <main style={{ flex: 1 }}>
+        <Outlet />
       </main>
-
-      {/* Footer — always at bottom */}
       <Footer />
     </div>
   );
