@@ -33,7 +33,11 @@ const Login = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'var(--navy-950)',
+      /* Blends your navy base color with the background image seamlessly */
+      background: `linear-gradient(rgba(5, 13, 26, 0.8), url('/home.png')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -45,14 +49,14 @@ const Login = () => {
       <div style={{
         position: 'absolute', top: '-10%', left: '-5%',
         width: 400, height: 400,
-        background: 'radial-gradient(circle, rgba(201,162,39,0.12), transparent 70%)',
+        background: 'radial-gradient(circle, rgba(192, 38, 211), transparent 70%)',
         borderRadius: '50%',
         pointerEvents: 'none',
       }} />
       <div style={{
         position: 'absolute', bottom: '-10%', right: '-5%',
         width: 500, height: 500,
-        background: 'radial-gradient(circle, rgba(30,58,95,0.5), transparent 70%)',
+        background: 'radial-gradient(circle, rgba(192, 38, 211), transparent 70%)',
         borderRadius: '50%',
         pointerEvents: 'none',
       }} />
@@ -61,7 +65,7 @@ const Login = () => {
       <div className="fade-in-up" style={{
         width: '100%',
         maxWidth: 420,
-        background: 'rgba(15, 32, 64, 0.85)',
+        background: 'rgba(255, 255, 255)',
         border: '1px solid rgba(201, 162, 39, 0.2)',
         borderRadius: 20,
         padding: '2.5rem',
@@ -81,10 +85,10 @@ const Login = () => {
             margin: '0 auto 1rem',
             boxShadow: '0 8px 30px rgba(201, 162, 39, 0.35)',
           }}>🏆</div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#080e14', marginBottom: 6 }}>
             House Lottery
           </h1>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
+          <p style={{ color: '#041225', fontSize: '0.875rem', margin: 0 }}>
             Admin Portal — Sign in to continue
           </p>
         </div>

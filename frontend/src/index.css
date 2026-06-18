@@ -1,14 +1,22 @@
 @import "tailwindcss";
 
-/* ── Google Font ─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* 
+ * CBE CENTRAL KYC - GLOBAL STYLES
+ * This file has been cleaned to ensure high visibility across all devices (Mobile, Tablet, Desktop).
+ * We've removed default dark-mode boilerplate to prevent white-on-white text issues.
+ */
+
+@layer theme {
+  @theme {
+    --arbitrary-values: always;
+  }
+}
 
 /* ── Design Tokens ───────────────────────────────────────── */
 :root {
   --font-sans: 'Inter', system-ui, sans-serif;
-
   /* Navy / Gold palette */
-  --navy-950: #050d1a;
+  --navy-950: #f4a8ff;
   --navy-900: #0a1628;
   --navy-800: #0f2040;
   --navy-700: #1a3158;
