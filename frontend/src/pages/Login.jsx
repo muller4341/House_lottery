@@ -1,8 +1,17 @@
+
+
+
+
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import axios from 'axios';
 import { signInSuccess } from '../redux/user/userSlice';
+
+// CBE Corporate Color Tokens
+const CBE_FUCHSIA = '#86198f';
+const CBE_GOLD = '#d4af37';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -33,11 +42,11 @@ const Login = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      /* Blends your navy base color with the background image seamlessly */
-      background: `linear-gradient(rgba(5, 13, 26, 0.8), url('/home.png')`,
+      backgroundImage: `url('/home.png')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -45,102 +54,99 @@ const Login = () => {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Background Orbs */}
+      {/* Background overlay to give the container professional depth */}
       <div style={{
-        position: 'absolute', top: '-10%', left: '-5%',
-        width: 400, height: 400,
-        background: 'radial-gradient(circle, rgba(192, 38, 211), transparent 70%)',
-        borderRadius: '50%',
-        pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-10%', right: '-5%',
-        width: 500, height: 500,
-        background: 'radial-gradient(circle, rgba(192, 38, 211), transparent 70%)',
-        borderRadius: '50%',
-        pointerEvents: 'none',
+        position: 'absolute', inset: 0,
+        background: `linear-gradient(135deg, rgba(134, 25, 143, 0.1), rgba(212, 175, 55, 0.05))`,
+        zIndex: 0
       }} />
 
-      {/* Card */}
+      {/* Branded Card Container */}
       <div className="fade-in-up" style={{
         width: '100%',
         maxWidth: 420,
-        background: 'rgba(255, 255, 255)',
-        border: '1px solid rgba(201, 162, 39, 0.2)',
-        borderRadius: 20,
+        background: '#ffffff',
+        border: `1px solid ${CBE_GOLD}40`,
+        borderRadius: 24,
         padding: '2.5rem',
-        boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 60px rgba(201,162,39,0.08)',
-        backdropFilter: 'blur(20px)',
+        boxShadow: '0 20px 40px -5px rgba(0,0,0,0.1), 0 10px 20px -5px rgba(134, 25, 143, 0.05)',
         position: 'relative',
         zIndex: 1,
       }}>
-        {/* Logo */}
+        
+        {/* CBE Branded Header & Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{
             width: 64, height: 64,
-            background: 'linear-gradient(135deg, var(--gold-500), var(--gold-300))',
-            borderRadius: 16,
+            background: `linear-gradient(135deg, ${CBE_FUCHSIA}, #6b1272)`,
+            borderRadius: 18,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2rem',
-            margin: '0 auto 1rem',
-            boxShadow: '0 8px 30px rgba(201, 162, 39, 0.35)',
-          }}>🏆</div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#080e14', marginBottom: 6 }}>
-            House Lottery
+            fontSize: '1.75rem',
+            margin: '0 auto 1.25rem',
+            boxShadow: `0 8px 20px ${CBE_FUCHSIA}30`,
+          }}>🏛️</div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: CBE_FUCHSIA, marginBottom: 4, letterSpacing: '-0.02em' }}>
+            Commercial Bank of Ethiopia
           </h1>
-          <p style={{ color: '#041225', fontSize: '0.875rem', margin: 0 }}>
-            Admin Portal — Sign in to continue
+          <p style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 600, margin: 0 }}>
+            Central KYC Portal — House Lottery Admin Panel
           </p>
         </div>
 
-        {/* Error */}
+        {/* Error Alert Display Box */}
         {error && (
           <div style={{
-            background: 'rgba(239, 68, 68, 0.12)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: 10,
+            background: '#fef2f2',
+            border: '1px solid #fee2e2',
+            borderRadius: '10px',
             padding: '0.75rem 1rem',
             marginBottom: '1.25rem',
-            color: '#fca5a5',
-            fontSize: '0.875rem',
+            color: '#991b1b',
+            fontSize: '0.85rem',
+            fontWeight: 500,
           }}>
             ⚠️ {error}
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Input Form Elements */}
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>
-              Email Address
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              Corporate Email Address
             </label>
             <input
               id="login-email"
               type="email"
-              className="form-input"
               placeholder="admin@lottery.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              style={{
+                width: '100%', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '10px',
+                fontSize: '0.9rem', color: '#0f172a', background: '#f8fafc', outline: 'none'
+              }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>
-              Password
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              Secure Password
             </label>
             <div style={{ position: 'relative' }}>
               <input
                 id="login-password"
                 type={showPass ? 'text' : 'password'}
-                className="form-input"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                style={{ paddingRight: '3rem' }}
+                style={{
+                  width: '100%', padding: '0.75rem 3rem 0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '10px',
+                  fontSize: '0.9rem', color: '#0f172a', background: '#f8fafc', outline: 'none'
+                }}
               />
               <button
                 type="button"
@@ -148,40 +154,56 @@ const Login = () => {
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#64748b', padding: 0, fontSize: '1rem',
+                  color: '#64748b', padding: 0, fontSize: '1.1rem',
                 }}
               >
-                {showPass ? '🙈' : '👁'}
+                {showPass ? '🙈' : '👁️'}
               </button>
             </div>
           </div>
 
+          {/* CBE Core Action Authenticate Action Trigger */}
           <button
             id="login-submit"
             type="submit"
             disabled={loading}
-            className="btn btn-gold btn-lg"
-            style={{ marginTop: '0.5rem', justifyContent: 'center', width: '100%' }}
+            style={{
+              marginTop: '0.5rem',
+              width: '100%',
+              padding: '0.875rem 1.5rem',
+              background: `linear-gradient(135deg, ${CBE_FUCHSIA}, #6b1272)`,
+              color: '#ffffff',
+              borderRadius: '12px',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              boxShadow: `0 4px 14px ${CBE_FUCHSIA}30`,
+              transition: 'transform 0.15s, opacity 0.15s'
+            }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.95'; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = '1'; }}
           >
             {loading ? (
               <>
                 <span className="spin-fast" style={{
                   display: 'inline-block',
                   width: 16, height: 16,
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  borderTopColor: 'var(--navy-900)',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  borderTopColor: '#ffffff',
                   borderRadius: '50%',
                 }} />
-                Signing in...
+                Authenticating...
               </>
             ) : (
-              <>🔐 Sign In</>
+              <>🔐 Sign In To Portal</>
             )}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.75rem', color: '#334155' }}>
-          Secured with JWT Authentication
+        <p style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
+          Secured with JWT Verification &amp; Commercial Bank Protocol Encryption
         </p>
       </div>
     </div>

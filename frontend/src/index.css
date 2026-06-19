@@ -16,7 +16,7 @@
 :root {
   --font-sans: 'Inter', system-ui, sans-serif;
   /* Navy / Gold palette */
-  --navy-950: #f4a8ff;
+  --navy-950: #F1F5F9;
   --navy-900: #0a1628;
   --navy-800: #0f2040;
   --navy-700: #1a3158;
@@ -30,6 +30,16 @@
   --gold-300: #e8c84a;
   --gold-200: #f5e08a;
   --gold-100: #fdf5cc;
+  --fuchisia-500: #ec4899;
+  --fuchisia-400: #f472b6;
+  --fuchisia-600: #C026D3;
+  --fuchisia-800: #86198F;
+  --slate-50: #F8FAFC;
+  --slate-100: #F1F5F9;
+  --slate-200: #E2E8F0;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1E2937;
 
   --success-500: #22c55e;
   --success-400: #4ade80;
@@ -89,7 +99,7 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Glass Card ──────────────────────────────────────────── */
 .glass-card {
-  background: var(--card-bg);
+  background: var(--slate-200);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
   backdrop-filter: blur(12px);
@@ -98,7 +108,7 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Stat Card ───────────────────────────────────────────── */
 .stat-card {
-  background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
+  background: linear-gradient(135deg, var(--slate-200), var(--slate-100));
   border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 1.5rem;
@@ -128,6 +138,12 @@ input, select, textarea { font-family: inherit; }
   background: linear-gradient(135deg, var(--gold-500), var(--gold-300));
   color: var(--navy-950);
 }
+
+.btn-fuchisia {
+  background: linear-gradient(135deg, var(--fuchisia-600), var(--fuchisia-400));
+  color: var(--navy-950);
+}
+
 .btn-gold:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--gold-400), var(--gold-200));
   transform: translateY(-1px);

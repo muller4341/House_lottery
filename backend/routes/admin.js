@@ -13,6 +13,7 @@ import {
   getLotteryResults,
   getLotteryHistory,
   downloadResultsExcel,
+  getLotteryFilterOptions
 } from '../controllers/adminController.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -65,5 +66,7 @@ router.post('/run-lottery', runLottery);
 router.get('/lottery-history', getLotteryHistory);
 router.get('/results/download/:runId', downloadResultsExcel);
 router.get('/results/:runId', getLotteryResults);
+// Add this alongside your other routes
+router.get('/lottery-filters', getLotteryFilterOptions);
 
 export default router;
